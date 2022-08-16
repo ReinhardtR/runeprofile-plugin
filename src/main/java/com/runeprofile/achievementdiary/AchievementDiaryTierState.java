@@ -11,6 +11,4 @@ public class AchievementDiaryTierState {
 	private final int completedTasks;
 	@Getter
 	private final int totalTasks;
-	@Getter
-	private final boolean isCompleted;
 }

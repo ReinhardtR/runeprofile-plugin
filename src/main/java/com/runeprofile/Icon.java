@@ -35,7 +35,7 @@ import java.awt.image.BufferedImage;
 import java.util.function.UnaryOperator;
 
 public enum Icon {
-	MAGIC_ICON("/magic_icon.png"),
+	LOGO("/logo.png"),
 	;
 
 	private final String file;

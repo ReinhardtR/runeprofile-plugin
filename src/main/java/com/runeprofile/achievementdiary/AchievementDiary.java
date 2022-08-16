@@ -34,29 +34,25 @@ public enum AchievementDiary {
 		AchievementDiaryTierState easyTierState = new AchievementDiaryTierState(
 						AchievementDiaryTier.EASY,
 						stack[0],
-						stack[1],
-						stack[2] == 1
+						stack[1]
 		);
 
 		AchievementDiaryTierState mediumTierState = new AchievementDiaryTierState(
 						AchievementDiaryTier.MEDIUM,
 						stack[3],
-						stack[4],
-						stack[5] == 1
+						stack[4]
 		);
 
 		AchievementDiaryTierState hardTierState = new AchievementDiaryTierState(
 						AchievementDiaryTier.HARD,
 						stack[6],
-						stack[7],
-						stack[8] == 1
+						stack[7]
 		);
 
 		AchievementDiaryTierState eliteTierState = new AchievementDiaryTierState(
 						AchievementDiaryTier.ELITE,
 						stack[9],
-						stack[10],
-						stack[11] == 1
+						stack[10]
 		);
 
 		return new AchievementDiaryState(name, easyTierState, mediumTierState, hardTierState, eliteTierState);

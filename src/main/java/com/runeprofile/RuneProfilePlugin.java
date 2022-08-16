@@ -3,6 +3,7 @@ package com.runeprofile;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import com.runeprofile.collectionlog.CollectionLogManager;
+import com.runeprofile.playermodel.PLYExporter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -23,12 +24,8 @@ import net.runelite.client.ui.NavigationButton;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.EnumSet;
-
-import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 @Slf4j
 @PluginDescriptor(name = "RuneProfile")
@@ -79,7 +76,7 @@ public class RuneProfilePlugin extends Plugin {
 		instance = this;
 
 		RuneProfilePanel runeProfilePanel = new RuneProfilePanel(this);
-		final BufferedImage toolbarIcon = Icon.MAGIC_ICON.getImage();
+		final BufferedImage toolbarIcon = Icon.LOGO.getImage();
 
 		navigationButton = NavigationButton.builder()
 						.tooltip("RuneProfile")
@@ -127,10 +124,7 @@ public class RuneProfilePlugin extends Plugin {
 		log.info("Test stuff");
 
 		try {
-			String path = RUNELITE_DIR + File.separator + "runeprofile" + File.separator + "collectionlog.json";
-			FileWriter fileWriter = new FileWriter(path, false);
-			fileWriter.write(collectionLogManager.getCollectionLog().toString());
-			fileWriter.close();
+			PLYExporter.export(client.getLocalPlayer().getModel(), client.getLocalPlayer().getName());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

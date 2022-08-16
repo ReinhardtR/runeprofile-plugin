@@ -1,6 +1,8 @@
 package com.runeprofile;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.runeprofile.achievementdiary.AchievementDiary;
@@ -8,13 +10,13 @@ import com.runeprofile.achievementdiary.AchievementDiaryState;
 import com.runeprofile.collectionlog.CollectionLog;
 import com.runeprofile.combatachievements.CombatAchievementTier;
 import com.runeprofile.combatachievements.CombatAchievementTierState;
-import com.runeprofile.playermodel.PlayerModel;
-import com.runeprofile.playermodel.PlayerModelFactory;
+import com.runeprofile.playermodel.PLYExporter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 
 import java.io.IOException;
+import java.util.Base64;
 
 @Slf4j
 public class PlayerData {
@@ -32,42 +34,50 @@ public class PlayerData {
 		json.addProperty("accountHash", client.getAccountHash());
 		json.addProperty("username", player.getName());
 		json.addProperty("accountType", client.getAccountType().toString());
+		json.addProperty("model", createPlayerModelJSON(player));
 
-		json.add("model", createPlayerModelJSON(player));
 		json.add("skills", createSkillsXPJSON(client.getSkillExperiences(), client.getOverallExperience()));
 		json.add("collectionLog", createCollectionLogJSON());
-
-		// Not supported by API endpoint yet
-//		json.add("achievementDiaries", getAchievementDiariesJSON());
-//		json.add("combatAchievements", getCombatAchievementsJSON());
-//		json.add("quests", getQuestsJSON());
+		json.add("achievementDiaries", getAchievementDiariesJSON());
+		json.add("combatAchievements", getCombatAchievementsJSON());
+		json.add("questList", getQuestsJSON());
 	}
 
-	private JsonObject createPlayerModelJSON(Player player) {
+	private String createPlayerModelJSON(Player player) {
 		// player.setAnimation(2566);
 		// player.setAnimationFrame(0);
-		PlayerModel playerModel = PlayerModelFactory.getPlayerModel(player.getModel(), player.getName());
 
-		JsonObject playerModelJSON = new JsonObject();
-		playerModelJSON.addProperty("obj", playerModel.getObj());
-		playerModelJSON.addProperty("mtl", playerModel.getMtl());
+		byte[] bytes = new byte[0];
 
-		return playerModelJSON;
+		try {
+			bytes = PLYExporter.export(player.getModel(), player.getName());
+		} catch (IOException e) {
+			log.error("Error exporting player model", e);
+		}
+
+		return Base64.getEncoder().encodeToString(bytes);
 	}
 
-	private JsonObject createSkillsXPJSON(int[] xps, long overallXP) {
-		JsonObject skillXPsJSON = new JsonObject();
+	private JsonArray createSkillsXPJSON(int[] xps, long overallXP) {
+		JsonArray skillsJSON = new JsonArray();
 		Skill[] skills = Skill.values();
 
 		// Loops through the skills (-1 skips overall xp)
 		for (int i = 0; i < skills.length - 1; i++) {
-			skillXPsJSON.addProperty(skills[i].toString().toLowerCase(), xps[i]);
+			JsonObject skillJSON = new JsonObject();
+			skillJSON.addProperty("name", skills[i].getName());
+			skillJSON.addProperty("xp", xps[i]);
+
+			skillsJSON.add(skillJSON);
 		}
 
 		// Adds the overall experience, as it's not included in the loop above
-		skillXPsJSON.addProperty(Skill.OVERALL.toString().toLowerCase(), overallXP);
+		JsonObject overallXPJson = new JsonObject();
+		overallXPJson.addProperty("name", "Overall");
+		overallXPJson.addProperty("xp", overallXP);
+		skillsJSON.add(overallXPJson);
 
-		return skillXPsJSON;
+		return skillsJSON;
 	}
 
 	private JsonObject createCollectionLogJSON() {
@@ -75,11 +85,12 @@ public class PlayerData {
 		return new JsonParser().parse(collectionLog.toString()).getAsJsonObject();
 	}
 
-	private JsonObject getAchievementDiariesJSON() {
-		JsonObject json = new JsonObject();
+	private JsonArray getAchievementDiariesJSON() {
+		JsonArray diaries = new JsonArray();
 
 		for (AchievementDiary ad : AchievementDiary.values()) {
-			JsonObject diaryJson = new JsonObject();
+			JsonObject areaJson = new JsonObject();
+			areaJson.addProperty("area", ad.getName());
 
 			AchievementDiaryState adState = ad.getState(client);
 
@@ -90,34 +101,36 @@ public class PlayerData {
 							adState.getEliteTier()
 			).forEach((tier) -> {
 				JsonObject tierJSON = new JsonObject();
-				tierJSON.addProperty("completedTasks", tier.getCompletedTasks());
-				tierJSON.addProperty("totalTasks", tier.getTotalTasks());
-				tierJSON.addProperty("isCompleted", tier.isCompleted());
+				tierJSON.addProperty("completed", tier.getCompletedTasks());
+				tierJSON.addProperty("total", tier.getTotalTasks());
 
-				String tierKey = tier.getTier().toString().toLowerCase();
-				diaryJson.add(tierKey, tierJSON);
+				areaJson.add(tier.getTier().getName(), tierJSON);
 			});
 
-			String diaryKey = ad.getName().toLowerCase();
-			json.add(diaryKey, diaryJson);
+			diaries.add(areaJson);
 		}
 
-		return json;
+		return diaries;
 	}
 
 	private JsonObject getQuestsJSON() {
 		JsonObject json = new JsonObject();
 
-		json.addProperty("questPoints", client.getVar(VarPlayer.QUEST_POINTS));
+		json.addProperty("points", client.getVar(VarPlayer.QUEST_POINTS));
 
-		JsonObject questList = new JsonObject();
+		JsonArray questsArray = new JsonArray();
+
 		for (Quest quest : Quest.values()) {
 			QuestState questState = quest.getState(client);
 
-			questList.addProperty(quest.getName(), questState.name());
+			JsonObject questJSON = new JsonObject();
+			questJSON.addProperty("name", quest.name());
+			questJSON.addProperty("state", questState.name());
+
+			questsArray.add(questJSON);
 		}
 
-		json.add("questList", questList);
+		json.add("quests", questsArray);
 
 		return json;
 	}
@@ -129,10 +142,10 @@ public class PlayerData {
 			CombatAchievementTierState caState = ca.getState(client);
 
 			JsonObject caJSON = new JsonObject();
-			caJSON.addProperty("completedTasks", caState.getCompletedTasks());
-			caJSON.addProperty("totalTasks", caState.getTotalTasks());
+			caJSON.addProperty("completed", caState.getCompletedTasks());
+			caJSON.addProperty("total", caState.getTotalTasks());
 
-			String tierKey = ca.getName().toLowerCase();
+			String tierKey = ca.getName();
 			json.add(tierKey, caJSON);
 		}
 
