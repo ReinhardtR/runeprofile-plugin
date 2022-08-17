@@ -17,6 +17,7 @@ import net.runelite.api.*;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 
 @Slf4j
 public class PlayerData {
@@ -36,7 +37,7 @@ public class PlayerData {
 		json.addProperty("accountType", client.getAccountType().toString());
 		json.addProperty("model", createPlayerModelJSON(player));
 
-		json.add("skills", createSkillsXPJSON(client.getSkillExperiences(), client.getOverallExperience()));
+		json.add("skills", createSkillsXPJSON());
 		json.add("collectionLog", createCollectionLogJSON());
 		json.add("achievementDiaries", getAchievementDiariesJSON());
 		json.add("combatAchievements", getCombatAchievementsJSON());
@@ -58,24 +59,42 @@ public class PlayerData {
 		return Base64.getEncoder().encodeToString(bytes);
 	}
 
-	private JsonArray createSkillsXPJSON(int[] xps, long overallXP) {
+	private JsonArray createSkillsXPJSON() {
 		JsonArray skillsJSON = new JsonArray();
-		Skill[] skills = Skill.values();
 
-		// Loops through the skills (-1 skips overall xp)
-		for (int i = 0; i < skills.length - 1; i++) {
+		List<Skill> skillsOrder = ImmutableList.of(
+						Skill.ATTACK,
+						Skill.HITPOINTS,
+						Skill.MINING,
+						Skill.STRENGTH,
+						Skill.AGILITY,
+						Skill.SMITHING,
+						Skill.DEFENCE,
+						Skill.HERBLORE,
+						Skill.FISHING,
+						Skill.RANGED,
+						Skill.THIEVING,
+						Skill.COOKING,
+						Skill.PRAYER,
+						Skill.CRAFTING,
+						Skill.FIREMAKING,
+						Skill.MAGIC,
+						Skill.FLETCHING,
+						Skill.WOODCUTTING,
+						Skill.RUNECRAFT,
+						Skill.SLAYER,
+						Skill.FARMING,
+						Skill.CONSTRUCTION,
+						Skill.HUNTER
+		);
+
+		for (Skill skill : skillsOrder) {
 			JsonObject skillJSON = new JsonObject();
-			skillJSON.addProperty("name", skills[i].getName());
-			skillJSON.addProperty("xp", xps[i]);
+			skillJSON.addProperty("name", skill.getName());
+			skillJSON.addProperty("xp", client.getSkillExperience(skill));
 
 			skillsJSON.add(skillJSON);
 		}
-
-		// Adds the overall experience, as it's not included in the loop above
-		JsonObject overallXPJson = new JsonObject();
-		overallXPJson.addProperty("name", "Overall");
-		overallXPJson.addProperty("xp", overallXP);
-		skillsJSON.add(overallXPJson);
 
 		return skillsJSON;
 	}
@@ -124,7 +143,7 @@ public class PlayerData {
 			QuestState questState = quest.getState(client);
 
 			JsonObject questJSON = new JsonObject();
-			questJSON.addProperty("name", quest.name());
+			questJSON.addProperty("name", quest.getName());
 			questJSON.addProperty("state", questState.name());
 
 			questsArray.add(questJSON);
