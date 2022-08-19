@@ -14,8 +14,10 @@ import com.runeprofile.playermodel.PLYExporter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import okio.Utf8;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
@@ -55,6 +57,7 @@ public class PlayerData {
 		} catch (IOException e) {
 			log.error("Error exporting player model", e);
 		}
+
 
 		return Base64.getEncoder().encodeToString(bytes);
 	}

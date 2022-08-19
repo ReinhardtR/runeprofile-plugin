@@ -50,20 +50,21 @@ public class PLYExporter {
 		}
 
 		ByteArrayOutputStream w = new ByteArrayOutputStream();
-		w.write("ply".getBytes());
-		w.write("format binary_little_endian 1.0".getBytes());
-		w.write(("element vertex " + vertices.size()).getBytes());
-		w.write("property int16 x".getBytes());
-		w.write("property int16 y".getBytes());
-		w.write("property int16 z".getBytes());
-		w.write("property uint8 red".getBytes());
-		w.write("property uint8 green".getBytes());
-		w.write("property uint8 blue".getBytes());
-		w.write(("element face " + model.getFaceCount()).getBytes());
-		w.write("property list uint8 int16 vertex_indices".getBytes());
-		w.write("end_header".getBytes());
 
-		for (Vertex v : vertices) {
+		w.write(newLine("ply"));
+		w.write(newLine("format binary_little_endian 1.0"));
+		w.write(newLine("element vertex " + vertices.size()));
+		w.write(newLine("property int16 x"));
+		w.write(newLine("property int16 y"));
+		w.write(newLine("property int16 z"));
+		w.write(newLine("property uint8 red"));
+		w.write(newLine("property uint8 green"));
+		w.write(newLine("property uint8 blue"));
+		w.write(newLine("element face " + model.getFaceCount()));
+		w.write(newLine("property list uint8 int16 vertex_indices"));
+		w.write(newLine("end_header"));
+
+		for (Vertex v: vertices) {
 			// Y and Z axes are flipped
 			w.write(le(v.x));
 			w.write(le(v.z));
@@ -81,9 +82,11 @@ public class PLYExporter {
 			w.write(le(vi + 2));
 		}
 
-		w.flush();
-
 		return w.toByteArray();
+	}
+
+	private static byte[] newLine(String text) {
+		return (text + System.lineSeparator()).getBytes();
 	}
 
 	// int to little endian byte array
