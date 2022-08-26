@@ -1,7 +1,10 @@
 package com.runeprofile;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import com.google.inject.Provides;
+import com.runeprofile.collectionlog.CollectionLog;
 import com.runeprofile.collectionlog.CollectionLogManager;
 import com.runeprofile.playermodel.PLYExporter;
 import lombok.Getter;
@@ -17,6 +20,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.externalplugins.ExternalPluginManager;
+import net.runelite.client.hiscore.HiscoreClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -24,6 +28,8 @@ import net.runelite.client.ui.NavigationButton;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.EnumSet;
 
@@ -51,6 +57,9 @@ public class RuneProfilePlugin extends Plugin {
 	@Inject
 	private ClientThread clientThread;
 
+	@Inject
+	private HiscoreClient hiscoreClient;
+
 	@Getter
 	@Inject
 	private ConfigManager configManager;
@@ -64,6 +73,10 @@ public class RuneProfilePlugin extends Plugin {
 
 	public static Client getClient() {
 		return instance.client;
+	}
+
+	public static HiscoreClient getHiscoreClient() {
+		return instance.hiscoreClient;
 	}
 
 	@Provides
@@ -113,20 +126,24 @@ public class RuneProfilePlugin extends Plugin {
 		}
 	}
 
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged varbitChanged) {
-		if (collectionLogManager != null) {
-			collectionLogManager.onVarbitChanged(varbitChanged);
-		}
-	}
+//	@Subscribe
+//	public void onVarbitChanged(VarbitChanged varbitChanged) {
+//		if (collectionLogManager != null) {
+//			collectionLogManager.onVarbitChanged(varbitChanged);
+//		}
+//	}
 
 	public void testStuff() {
 		log.info("Test stuff");
 
 		try {
-			PLYExporter.export(client.getLocalPlayer().getModel(), client.getLocalPlayer().getName());
+			CollectionLog collectionLog = collectionLogManager.getCollectionLog();
+
+			log.info(collectionLog.toString());
+
+			new Gson().toJson(collectionLog, new FileWriter("collection.json", false));
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 

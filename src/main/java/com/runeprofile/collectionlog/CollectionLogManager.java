@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
@@ -19,9 +18,9 @@ import java.util.List;
 
 @Slf4j
 public class CollectionLogManager {
-	private static final int COLLECTION_LOG_ENTRY_VARBIT_INDEX = 2049;
-	private static final int COLLECTION_LOG_TAB_ACTIVE_COLOR = 16754735;
-	private static final int COLLECTION_LOG_TAB_TEXT_INDEX = 3;
+//	private static final int ENTRY_VARBIT_INDEX = 2049;
+	private static final int TAB_ACTIVE_COLOR = 16754735;
+	private static final int TAB_TEXT_INDEX = 3;
 
 	private final Client client;
 	private final ClientThread clientThread;
@@ -55,15 +54,17 @@ public class CollectionLogManager {
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
 		if (scriptPostFired.getScriptId() == ScriptID.COLLECTION_DRAW_LIST) {
+			log.info("COLLECTION DRAW LIST");
 			clientThread.invokeLater(this::updateCollectionLog);
 		}
 	}
 
-	public void onVarbitChanged(VarbitChanged varbitChanged) {
-		if (varbitChanged.getIndex() == COLLECTION_LOG_ENTRY_VARBIT_INDEX) {
-			clientThread.invokeLater(this::updateCollectionLog);
-		}
-	}
+//	public void onVarbitChanged(VarbitChanged varbitChanged) {
+//		if (varbitChanged.getIndex() == ENTRY_VARBIT_INDEX) {
+//			log.info("ENTRY VARBIT CHANGED");
+//			clientThread.invokeLater(this::updateCollectionLog);
+//		}
+//	}
 
 	public CollectionLogEntry getEntry() {
 		String name = getEntryName();
@@ -111,15 +112,40 @@ public class CollectionLogManager {
 	}
 
 	private int getEntryIndex() {
-		Widget entryWidget = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY);
+		String entryName = getEntryName();
 
-		if (entryWidget == null) {
+		if (entryName == null) {
 			return -1;
 		}
 
-		log.info("ENTRY HEAD INDEX " + entryWidget.getIndex());
+		CollectionLogTabs tab = CollectionLogTabs.getByName(getTabTitle());
 
-		return entryWidget.getIndex();
+		if (tab == null) {
+			return -1;
+		}
+
+		Widget entryList = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getEntryListId());
+
+		if (entryList == null) {
+			return -1;
+		}
+
+		Widget[] entries = entryList.getDynamicChildren();
+
+		int index = -1;
+
+		log.info("ENTRY NAME: " + entryName);
+		for (int i = 0; i < entries.length; i++) {
+			String entryText = entries[i].getText();
+			log.info("CURRENT ENTRY TEXT: " + entryText);
+			if (entryText.equals(entryName)) {
+				index = i;
+				break;
+			}
+		}
+
+		log.info("ENTRY INDEX: " + index);
+		return index;
 	}
 
 	private String getEntryName() {
@@ -131,7 +157,7 @@ public class CollectionLogManager {
 
 		Widget[] children = entryHead.getDynamicChildren();
 
-		if (children == null || children.length <= 0) {
+		if (children == null || children.length == 0) {
 			return null;
 		}
 
@@ -148,15 +174,15 @@ public class CollectionLogManager {
 
 			Widget[] children = tabWidget.getDynamicChildren();
 
-			if (children == null || COLLECTION_LOG_TAB_TEXT_INDEX >= children.length) {
+			if (children == null || TAB_TEXT_INDEX >= children.length) {
 				continue;
 			}
 
-			Widget titleWidget = children[COLLECTION_LOG_TAB_TEXT_INDEX];
+			Widget titleWidget = children[TAB_TEXT_INDEX];
 			String title = titleWidget.getText();
 			int color = titleWidget.getTextColor();
 
-			if (color == COLLECTION_LOG_TAB_ACTIVE_COLOR) {
+			if (color == TAB_ACTIVE_COLOR) {
 				return title;
 			}
 		}
@@ -176,12 +202,12 @@ public class CollectionLogManager {
 		Widget[] itemWidgets = itemsContainer.getDynamicChildren();
 
 		for (Widget itemWidget : itemWidgets) {
+			int index = itemWidget.getIndex();
 			int id = itemWidget.getItemId();
 			String name = unwrapText(itemWidget.getName());
 			int quantity = itemWidget.getOpacity() == 0 ? itemWidget.getItemQuantity() : 0;
-			int index = itemWidget.getIndex();
 
-			items.add(new CollectionLogItem(id, name, quantity, index));
+			items.add(new CollectionLogItem(index, id, name, quantity));
 		}
 
 		return items;

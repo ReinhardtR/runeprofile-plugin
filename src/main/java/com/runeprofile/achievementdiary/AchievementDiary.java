@@ -6,18 +6,18 @@ import net.runelite.api.Client;
 
 @RequiredArgsConstructor
 public enum AchievementDiary {
-	KARAMJA(0, "Karamja"),
 	ARDOUGNE(1, "Ardougne"),
+	DESERT(5, "Desert"),
 	FALADOR(2, "Falador"),
 	FREMENNIK(3, "Fremennik"),
 	KANDARIN(4, "Kandarin"),
-	DESERT(5, "Desert"),
+	KARAMJA(0, "Karamja"),
+	KOUREND(11, "Kourend & Kebos"),
 	LUMBRIDGE(6, "Lumbridge & Draynor"),
 	MORYTANIA(7, "Morytania"),
 	VARROCK(8, "Varrock"),
-	WILDERNESS(9, "Wilderness"),
 	WESTERN_PROVINCES(10, "Western Provinces"),
-	KOUREND(11, "Kourend & Kebos");
+	WILDERNESS(9, "Wilderness");
 
 	@Getter
 	private final int id;
