@@ -44,6 +44,7 @@ public class PlayerData {
 		json.addProperty("username", username);
 		json.addProperty("accountType", accountType.toString());
 		json.addProperty("model", createPlayerModelJSON());
+		json.addProperty("combatLevel", player.getCombatLevel());
 
 		json.add("skills", createSkillsXPJSON());
 		json.add("collectionLog", createCollectionLogJSON());

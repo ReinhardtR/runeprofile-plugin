@@ -79,6 +79,10 @@ public class RuneProfilePlugin extends Plugin {
 		return instance.hiscoreClient;
 	}
 
+	public static ConfigManager getConfigManager() {
+		return instance.configManager;
+	}
+
 	@Provides
 	RuneProfileConfig provideConfig(ConfigManager configManager) {
 		return configManager.getConfig(RuneProfileConfig.class);
