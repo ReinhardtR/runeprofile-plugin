@@ -3,12 +3,14 @@ package com.runeprofile.playermodel;
 import net.runelite.api.Model;
 
 import java.awt.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
-public class PLYExporter {
-	public static byte[] export(Model model, String name) throws IOException {
+public class PlayerModelExporter {
+	public static String export(Model model, String name) throws IOException {
 		List<Vertex> vertices = new ArrayList<>();
 		for (int fi = 0; fi < model.getFaceCount(); fi++) {
 			// determine vertex colors (textured or colored?)
@@ -64,7 +66,7 @@ public class PLYExporter {
 		w.write(newLine("property list uint8 int16 vertex_indices"));
 		w.write(newLine("end_header"));
 
-		for (Vertex v: vertices) {
+		for (Vertex v : vertices) {
 			// Y and Z axes are flipped
 			w.write(le(v.x));
 			w.write(le(v.z));
@@ -82,7 +84,7 @@ public class PLYExporter {
 			w.write(le(vi + 2));
 		}
 
-		return w.toByteArray();
+		return Base64.getEncoder().encodeToString(w.toByteArray());
 	}
 
 	private static byte[] newLine(String text) {

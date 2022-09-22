@@ -1,12 +1,11 @@
 package com.runeprofile;
 
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
 import com.google.inject.Provides;
-import com.runeprofile.collectionlog.CollectionLog;
 import com.runeprofile.collectionlog.CollectionLogManager;
-import com.runeprofile.playermodel.PLYExporter;
+import com.runeprofile.dataobjects.PlayerData;
+import com.runeprofile.dataobjects.PlayerModelData;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -15,7 +14,6 @@ import net.runelite.api.Player;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -27,14 +25,19 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 
 import javax.inject.Inject;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
-@PluginDescriptor(name = "RuneProfile")
+@PluginDescriptor(
+				name = "RuneProfile",
+				description = "Show off your achievements on RuneProfile.com",
+				tags = {"rune", "profile"}
+)
 public class RuneProfilePlugin extends Plugin {
 	private static RuneProfilePlugin instance;
 
@@ -60,10 +63,10 @@ public class RuneProfilePlugin extends Plugin {
 	@Inject
 	private HiscoreClient hiscoreClient;
 
-	@Getter
 	@Inject
 	private ConfigManager configManager;
 
+	private RuneProfilePanel runeProfilePanel;
 	private NavigationButton navigationButton;
 	private CollectionLogManager collectionLogManager;
 
@@ -92,7 +95,7 @@ public class RuneProfilePlugin extends Plugin {
 	protected void startUp() {
 		instance = this;
 
-		RuneProfilePanel runeProfilePanel = new RuneProfilePanel(this);
+		this.runeProfilePanel = new RuneProfilePanel(this);
 		final BufferedImage toolbarIcon = Icon.LOGO.getImage();
 
 		navigationButton = NavigationButton.builder()
@@ -112,14 +115,17 @@ public class RuneProfilePlugin extends Plugin {
 
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged gameStateChanged) {
-		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN) {
-//			try {
-//				updateRuneProfile();
-//			} catch (IllegalStateException e) {
-//				log.error("Failed to update RuneProfile: " + e.getMessage());
-//			}
-		} else if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
+		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
+			try {
+				isValidRequest();
+			} catch (Exception e) {
+				runeProfilePanel.loadInvalidRequestState();
+			}
+
 			collectionLogManager = new CollectionLogManager(client, clientThread, configManager);
+			runeProfilePanel.loadValidState();
+		} else {
+			runeProfilePanel.loadInvalidState();
 		}
 	}
 
@@ -137,21 +143,143 @@ public class RuneProfilePlugin extends Plugin {
 //		}
 //	}
 
-	public void testStuff() {
-		log.info("Test stuff");
+	public void updateAccount() throws IllegalStateException, InterruptedException {
+		isValidRequest();
 
-		try {
-			CollectionLog collectionLog = collectionLogManager.getCollectionLog();
-
-			log.info(collectionLog.toString());
-
-			new Gson().toJson(collectionLog, new FileWriter("collection.json", false));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		new Thread(() -> {
+			try {
+				PlayerData playerData = new PlayerData(this);
+				runeProfileApiClient.updateAccount(playerData);
+			} catch (IOException | InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}).start();
 	}
 
-	public void updateRuneProfile() throws IllegalStateException {
+	public void updateModel() throws IllegalStateException, InterruptedException {
+		isValidRequest();
+
+		AtomicReference<PlayerModelData> playerModelData = new AtomicReference<>();
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		clientThread.invokeLater(() -> {
+			try {
+				playerModelData.set(new PlayerModelData(client));
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				latch.countDown();
+			}
+		});
+
+		latch.await();
+
+		new Thread(() -> {
+			runeProfileApiClient.updateModel(playerModelData.get());
+		}).start();
+	}
+
+	public String updateGeneratedPath() throws Exception {
+		isValidRequest();
+
+		long accountHash = client.getAccountHash();
+
+		AtomicReference<String> newUrl = new AtomicReference<>();
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		new Thread(() -> {
+			try {
+				String newUrlResult = runeProfileApiClient.updateGeneratedPath(accountHash);
+				newUrl.set(newUrlResult);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			} finally {
+				latch.countDown();
+			}
+		}).start();
+
+		latch.await();
+
+		if (newUrl.get() == null) {
+			throw new Exception("Failed to update generated path");
+		}
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.GENERATED_PATH,
+						newUrl.get()
+		);
+
+		return newUrl.get();
+	}
+
+	public JsonObject updateIsPrivate(boolean isPrivate) throws Exception {
+		isValidRequest();
+
+		long accountHash = client.getAccountHash();
+
+		AtomicReference<JsonObject> response = new AtomicReference<>();
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		new Thread(() -> {
+			try {
+				JsonObject newIsPrivateResult = runeProfileApiClient.updateIsPrivate(accountHash, isPrivate);
+				response.set(newIsPrivateResult);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			} finally {
+				latch.countDown();
+			}
+		}).start();
+
+		latch.await();
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.GENERATED_PATH,
+						response.get().get("isPrivate").getAsBoolean()
+		);
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.GENERATED_PATH,
+						response.get().get("generatedPath").getAsString()
+		);
+
+		return response.get();
+	}
+
+	public void deleteProfile() {
+		isValidRequest();
+
+		if (!isConfirmedDeletion("Are you sure you want to delete your RuneProfile?")) {
+			return;
+		}
+
+		clientThread.invokeLater(() -> {
+			long accountHash = client.getAccountHash();
+
+			new Thread(() -> {
+				runeProfileApiClient.deleteProfile(accountHash);
+			}).start();
+		});
+	}
+
+	private boolean isConfirmedDeletion(String message) {
+		int confirm = JOptionPane.showConfirmDialog(
+						runeProfilePanel,
+						message,
+						"RuneProfile",
+						JOptionPane.OK_CANCEL_OPTION
+		);
+
+		return confirm == JOptionPane.YES_OPTION;
+	}
+
+	private void isValidRequest() throws IllegalStateException {
 		if (!isValidWorldType(client.getWorldType())) {
 			throw new IllegalStateException("Not on a valid world type");
 		}
@@ -167,20 +295,7 @@ public class RuneProfilePlugin extends Plugin {
 		if (player == null || player.getName() == null) {
 			throw new IllegalStateException("Failed to get Player");
 		}
-
-		clientThread.invokeLater(() -> {
-			try {
-				PlayerData playerData = new PlayerData(client);
-
-				new Thread(() -> {
-					runeProfileApiClient.createOrUpdateRuneProfile(playerData);
-				}).start();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		});
 	}
-
 
 	private boolean isValidWorldType(EnumSet<WorldType> worldTypes) {
 		return ImmutableList.of(

@@ -1,68 +1,78 @@
 package com.runeprofile;
 
+import com.runeprofile.panels.HeaderPanel;
+import com.runeprofile.panels.InvalidPanel;
+import com.runeprofile.panels.ValidPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 @Slf4j
 public class RuneProfilePanel extends PluginPanel {
+	private final RuneProfilePlugin runeProfilePlugin;
+	private ValidPanel validPanel;
+	private InvalidPanel invalidPanel;
+
 	public RuneProfilePanel(RuneProfilePlugin runeProfilePlugin) {
-		super(false);
 
-		JButton requestButton = new JButton("Send Request");
-		requestButton.addActionListener((event) -> {
-			log.info("Request button clicked");
-			runeProfilePlugin.getClientThread().invokeLater(runeProfilePlugin::updateRuneProfile);
-		});
+		this.runeProfilePlugin = runeProfilePlugin;
 
-		add(requestButton);
+		add(new HeaderPanel());
+		loadInvalidState();
+	}
 
-		JButton testButton = new JButton("Test Stuff");
-		testButton.addActionListener((event) -> {
-			log.info("Test button clicked");
-			runeProfilePlugin.getClientThread().invokeLater(runeProfilePlugin::testStuff);
-		});
+	private void addHeader() {
 
-		add(testButton);
+	}
 
-		String storedDescription = RuneProfilePlugin.getConfigManager().getConfiguration(
-						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.ACCOUNT_DESCRIPTION_KEY
-		);
-
-		JTextArea textArea = new JTextArea(storedDescription);
-		textArea.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void insertUpdate(DocumentEvent e) {
-				RuneProfilePlugin.getConfigManager().setConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.ACCOUNT_DESCRIPTION_KEY,
-								textArea.getText()
-				);
+	public void loadValidState() {
+		SwingUtilities.invokeLater(() -> {
+			if (invalidPanel != null) {
+				remove(invalidPanel);
 			}
 
-			@Override
-			public void removeUpdate(DocumentEvent e) {
-				RuneProfilePlugin.getConfigManager().setConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.ACCOUNT_DESCRIPTION_KEY,
-								textArea.getText()
-				);
+			if (validPanel == null) {
+				validPanel = new ValidPanel(runeProfilePlugin);
 			}
 
-			@Override
-			public void changedUpdate(DocumentEvent e) {
-				RuneProfilePlugin.getConfigManager().setConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.ACCOUNT_DESCRIPTION_KEY,
-								textArea.getText()
-				);
-			}
+			add(validPanel);
+			revalidate();
+			repaint();
 		});
+	}
 
-		add(textArea);
+	public void loadInvalidState() {
+		SwingUtilities.invokeLater(() -> {
+			if (validPanel != null) {
+				remove(validPanel);
+			}
+
+			if (invalidPanel == null) {
+				invalidPanel = new InvalidPanel();
+			}
+
+			invalidPanel.setHintText("Login to use this plugin.");
+			add(invalidPanel);
+			revalidate();
+			repaint();
+		});
+	}
+
+	public void loadInvalidRequestState() {
+		SwingUtilities.invokeLater(() -> {
+			if (validPanel != null) {
+				remove(validPanel);
+			}
+
+			if (invalidPanel == null) {
+				invalidPanel = new InvalidPanel();
+			}
+
+			invalidPanel.setHintText("Invalid world/mode.");
+			add(invalidPanel);
+			revalidate();
+			repaint();
+		});
 	}
 }

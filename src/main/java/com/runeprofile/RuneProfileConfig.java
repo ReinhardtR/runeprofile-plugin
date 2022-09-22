@@ -2,17 +2,13 @@ package com.runeprofile;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("runeprofile")
 public interface RuneProfileConfig extends Config {
 	String CONFIG_GROUP = "runeprofile";
-	String COLLECTION_LOG_KEY = "collection_log";
-
-	String ACCOUNT_DESCRIPTION_KEY = "account_description";
-
-	@ConfigItem(keyName = "placeholder", name = "Placeholder Name", description = "A long placeholder description.")
-	default String greeting() {
-		return "Placeholder return value!";
-	}
+	String COLLECTION_LOG = "collection_log";
+	String DESCRIPTION = "description";
+	String GENERATED_PATH = "generated_path"; // The generated path for the profile.
+	String IS_PRIVATE = "is_private"; // The profile is unlisted/private.
+	String HAS_MODEL = "has_model"; // A model has been submitted before.
 }

@@ -18,7 +18,6 @@ import java.util.List;
 
 @Slf4j
 public class CollectionLogManager {
-//	private static final int ENTRY_VARBIT_INDEX = 2049;
 	private static final int TAB_ACTIVE_COLOR = 16754735;
 	private static final int TAB_TEXT_INDEX = 3;
 
@@ -38,11 +37,9 @@ public class CollectionLogManager {
 	}
 
 	private CollectionLog getStoredCollectionLog() {
-		long accountHash = client.getAccountHash();
-
-		String collectionLogString = configManager.getConfiguration(
+		String collectionLogString = configManager.getRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.COLLECTION_LOG_KEY + accountHash
+						RuneProfileConfig.COLLECTION_LOG
 		);
 
 		if (collectionLogString == null) {
@@ -97,12 +94,9 @@ public class CollectionLogManager {
 		int uniqueItemsTotal = client.getVarpValue(2944);
 		collectionLog.setUniqueItemsTotal(uniqueItemsTotal);
 
-		// Set configuration for account
-		long accountHash = client.getAccountHash();
-
-		configManager.setConfiguration(
+		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.COLLECTION_LOG_KEY + accountHash,
+						RuneProfileConfig.COLLECTION_LOG,
 						collectionLog
 		);
 	}
