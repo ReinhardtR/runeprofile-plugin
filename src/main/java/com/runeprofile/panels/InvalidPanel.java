@@ -13,16 +13,20 @@ public class InvalidPanel extends JPanel {
 		setBorder(new EmptyBorder(50, 10, 0, 10));
 		setLayout(new BorderLayout());
 
+		JPanel wrapper = new JPanel(new BorderLayout());
+
 		JLabel titleText = new JLabel("RuneProfile");
 		titleText.setFont(FontManager.getRunescapeFont());
 		titleText.setForeground(Color.WHITE);
 		titleText.setHorizontalAlignment(SwingConstants.CENTER);
-		add(titleText, BorderLayout.NORTH);
+		wrapper.add(titleText, BorderLayout.NORTH);
 
 		hintText.setFont(FontManager.getRunescapeSmallFont());
 		hintText.setForeground(Color.GRAY);
 		hintText.setHorizontalAlignment(SwingConstants.CENTER);
-		add(hintText, BorderLayout.CENTER);
+		wrapper.add(hintText, BorderLayout.CENTER);
+
+		add(wrapper, BorderLayout.NORTH);
 	}
 
 	public void setHintText(String text) {

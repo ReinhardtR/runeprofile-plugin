@@ -38,7 +38,9 @@ public enum Icon {
 	WEB("/web.png"),
 	DISCORD("/discord.png"),
 	GITHUB("/github.png"),
-	;
+	HOME("/home.png"),
+	COLLECTION_LOG("/collection_log.png"),
+	SETTINGS("/settings.png");
 
 	private final String file;
 

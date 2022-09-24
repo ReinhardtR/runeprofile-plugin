@@ -1,17 +1,23 @@
-package com.runeprofile.panels;
+package com.runeprofile.panels.home;
 
 import com.runeprofile.RuneProfilePlugin;
-import net.runelite.client.ui.DynamicGridLayout;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-public class ValidPanel extends JPanel {
-	public ValidPanel(RuneProfilePlugin runeProfilePlugin) {
-		setLayout(new DynamicGridLayout(0, 1, 0, 3));
+public class HomePanel extends JPanel {
+	public HomePanel(RuneProfilePlugin runeProfilePlugin) {
+		setLayout(new BorderLayout());
+
+		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 6));
+
+		Border buttonBorder = new EmptyBorder(8, 16, 8, 16);
 
 		// Update account button
 		JButton updateAccountButton = new JButton("Update Account");
+		updateAccountButton.setBorder(buttonBorder);
 		updateAccountButton.addActionListener((event) -> {
 			try {
 				runeProfilePlugin.updateAccount();
@@ -20,10 +26,11 @@ public class ValidPanel extends JPanel {
 			}
 		});
 
-		add(updateAccountButton);
+		wrapper.add(updateAccountButton);
 
 		// Update model button
 		JButton updateModelButton = new JButton("Update Model");
+		updateModelButton.setBorder(buttonBorder);
 		updateModelButton.addActionListener((event) -> {
 			try {
 				runeProfilePlugin.updateModel();
@@ -32,27 +39,15 @@ public class ValidPanel extends JPanel {
 			}
 		});
 
-		add(updateModelButton);
+		wrapper.add(updateModelButton);
 
 		// Delete profile
 		JButton deleteProfileButton = new JButton("Delete Profile");
+		deleteProfileButton.setBorder(buttonBorder);
 		deleteProfileButton.addActionListener((event) -> SwingUtilities.invokeLater(runeProfilePlugin::deleteProfile));
 
-		add(deleteProfileButton);
+		wrapper.add(deleteProfileButton);
 
-		// Container
-		JPanel container = new JPanel();
-		BoxLayout layout = new BoxLayout(container, BoxLayout.Y_AXIS);
-		container.setLayout(layout);
-
-		add(container);
-
-		JPanel descriptionContainer = new DescriptionPanel();
-		JPanel hiddenProfileContainer = new HiddenProfilePanel(runeProfilePlugin);
-
-		container.add(Box.createRigidArea(new Dimension(0, 10)));
-		container.add(descriptionContainer);
-		container.add(Box.createRigidArea(new Dimension(0, 10)));
-		container.add(hiddenProfileContainer);
+		add(wrapper, BorderLayout.NORTH);
 	}
 }

@@ -1,9 +1,10 @@
-package com.runeprofile.panels;
+package com.runeprofile.panels.settings;
 
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.utils.DocumentSizeFilter;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -16,13 +17,16 @@ import java.awt.event.FocusListener;
 
 public class DescriptionPanel extends JPanel {
 	private static final int maxLength = 100;
-	private final JLabel descriptionLabel = new JLabel("Description (" + "0" + "/" + maxLength + ")");
+	private final JLabel descriptionTitle = new JLabel("Description (" + "0" + "/" + maxLength + ")");
 	private final JTextArea descriptionEditor = new JTextArea(9, 0);
 
 	public DescriptionPanel() {
 		super(false);
 
 		this.setLayout(new BorderLayout());
+
+		descriptionTitle.setFont(FontManager.getRunescapeBoldFont());
+		descriptionTitle.setForeground(Color.WHITE);
 
 		JPanel container = new JPanel();
 		container.setLayout(new BorderLayout());
@@ -42,7 +46,7 @@ public class DescriptionPanel extends JPanel {
 
 		container.add(descriptionEditor);
 
-		add(descriptionLabel, BorderLayout.PAGE_START);
+		add(descriptionTitle, BorderLayout.PAGE_START);
 		add(container);
 	}
 
@@ -76,7 +80,7 @@ public class DescriptionPanel extends JPanel {
 	}
 
 	private void updateDescriptionCount() {
-		descriptionLabel.setText("Description (" + descriptionEditor.getDocument().getLength() + "/" + maxLength + ")");
+		descriptionTitle.setText("Description (" + descriptionEditor.getDocument().getLength() + "/" + maxLength + ")");
 	}
 
 	private void initMaxLengthFilter() {

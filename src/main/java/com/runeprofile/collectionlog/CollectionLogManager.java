@@ -2,6 +2,7 @@ package com.runeprofile.collectionlog;
 
 import com.google.gson.Gson;
 import com.runeprofile.RuneProfileConfig;
+import com.runeprofile.RuneProfilePlugin;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -15,6 +16,7 @@ import net.runelite.client.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 public class CollectionLogManager {
@@ -25,14 +27,22 @@ public class CollectionLogManager {
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
 
+	private String previousTab = null;
+
 	@Getter
-	private final CollectionLog collectionLog;
+	private CollectionLog collectionLog;
 
-	public CollectionLogManager(Client client, ClientThread clientThread, ConfigManager configManager) {
-		this.client = client;
-		this.clientThread = clientThread;
-		this.configManager = configManager;
+	public CollectionLogManager() {
+		this.client = RuneProfilePlugin.getClient();
+		this.configManager = RuneProfilePlugin.getConfigManager();
+		this.clientThread = RuneProfilePlugin.getClientThread();
+		reloadManager();
 
+//		Test
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.COLLECTION_LOG);
+	}
+
+	public void reloadManager() {
 		collectionLog = getStoredCollectionLog();
 	}
 
@@ -51,17 +61,64 @@ public class CollectionLogManager {
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
 		if (scriptPostFired.getScriptId() == ScriptID.COLLECTION_DRAW_LIST) {
-			log.info("COLLECTION DRAW LIST");
 			clientThread.invokeLater(this::updateCollectionLog);
+			updateCollectionLogPanel();
 		}
 	}
 
-//	public void onVarbitChanged(VarbitChanged varbitChanged) {
-//		if (varbitChanged.getIndex() == ENTRY_VARBIT_INDEX) {
-//			log.info("ENTRY VARBIT CHANGED");
-//			clientThread.invokeLater(this::updateCollectionLog);
-//		}
-//	}
+	private void updateCollectionLogPanel() {
+		String tabName = getTabTitle();
+
+		if (tabName == null) {
+			return;
+		}
+
+		if (tabName.equals(previousTab)) {
+			RuneProfilePlugin.getPanel().getMainPanel().getCollectionLogPanel().newEntrySelected(getEntryName());
+			return;
+		}
+
+		previousTab = tabName;
+
+		List<String> entriesInTab = new ArrayList<>();
+
+		Widget[] entryWidgets = getEntriesInTab();
+		if (entryWidgets != null) {
+			for (Widget entryWidget : entryWidgets) {
+				entriesInTab.add(entryWidget.getText());
+			}
+		}
+
+		Set<String> storedInLog = collectionLog.getTab(tabName).keySet();
+
+		List<String> missingEntries = new ArrayList<>(entriesInTab);
+		missingEntries.removeAll(storedInLog);
+		missingEntries.remove(getEntryName());
+
+		RuneProfilePlugin.getPanel().getMainPanel().getCollectionLogPanel().newTabSelected(missingEntries);
+	}
+
+	private Widget[] getEntriesInTab() {
+		String entryName = getEntryName();
+
+		if (entryName == null) {
+			return null;
+		}
+
+		CollectionLogTabs tab = CollectionLogTabs.getByName(getTabTitle());
+
+		if (tab == null) {
+			return null;
+		}
+
+		Widget entryList = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getEntryListId());
+
+		if (entryList == null) {
+			return null;
+		}
+
+		return entryList.getDynamicChildren();
+	}
 
 	public CollectionLogEntry getEntry() {
 		String name = getEntryName();
@@ -106,29 +163,16 @@ public class CollectionLogManager {
 	}
 
 	private int getEntryIndex() {
-		String entryName = getEntryName();
-
-		if (entryName == null) {
-			return -1;
-		}
-
-		CollectionLogTabs tab = CollectionLogTabs.getByName(getTabTitle());
-
-		if (tab == null) {
-			return -1;
-		}
-
-		Widget entryList = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getEntryListId());
-
-		if (entryList == null) {
-			return -1;
-		}
-
-		Widget[] entries = entryList.getDynamicChildren();
+		Widget[] entries = getEntriesInTab();
 
 		int index = -1;
 
-		log.info("ENTRY NAME: " + entryName);
+		if (entries == null) {
+			return index;
+		}
+
+		String entryName = getEntryName();
+
 		for (int i = 0; i < entries.length; i++) {
 			String entryText = entries[i].getText();
 			log.info("CURRENT ENTRY TEXT: " + entryText);

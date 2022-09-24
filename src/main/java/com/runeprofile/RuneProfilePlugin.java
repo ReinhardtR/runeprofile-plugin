@@ -6,7 +6,6 @@ import com.google.inject.Provides;
 import com.runeprofile.collectionlog.CollectionLogManager;
 import com.runeprofile.dataobjects.PlayerData;
 import com.runeprofile.dataobjects.PlayerModelData;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -56,7 +55,6 @@ public class RuneProfilePlugin extends Plugin {
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	@Getter
 	@Inject
 	private ClientThread clientThread;
 
@@ -78,12 +76,20 @@ public class RuneProfilePlugin extends Plugin {
 		return instance.client;
 	}
 
+	public static ClientThread getClientThread() {
+		return instance.clientThread;
+	}
+
 	public static HiscoreClient getHiscoreClient() {
 		return instance.hiscoreClient;
 	}
 
 	public static ConfigManager getConfigManager() {
 		return instance.configManager;
+	}
+
+	public static RuneProfilePanel getPanel() {
+		return instance.runeProfilePanel;
 	}
 
 	@Provides
@@ -122,9 +128,18 @@ public class RuneProfilePlugin extends Plugin {
 				runeProfilePanel.loadInvalidRequestState();
 			}
 
-			collectionLogManager = new CollectionLogManager(client, clientThread, configManager);
+			if (collectionLogManager == null) {
+				collectionLogManager = new CollectionLogManager();
+			} else {
+				collectionLogManager.reloadManager();
+			}
+			
 			runeProfilePanel.loadValidState();
 		} else {
+			if (collectionLogManager != null) {
+				collectionLogManager.reloadManager();
+			}
+
 			runeProfilePanel.loadInvalidState();
 		}
 	}

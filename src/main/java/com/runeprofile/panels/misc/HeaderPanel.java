@@ -1,4 +1,4 @@
-package com.runeprofile.panels;
+package com.runeprofile.panels.misc;
 
 import com.runeprofile.Icon;
 import net.runelite.client.ui.ColorScheme;

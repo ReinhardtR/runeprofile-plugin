@@ -1,29 +1,31 @@
 package com.runeprofile;
 
-import com.runeprofile.panels.HeaderPanel;
 import com.runeprofile.panels.InvalidPanel;
-import com.runeprofile.panels.ValidPanel;
+import com.runeprofile.panels.MainPanel;
+import com.runeprofile.panels.misc.HeaderPanel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.PluginPanel;
 
 import javax.swing.*;
+import java.awt.*;
 
 @Slf4j
 public class RuneProfilePanel extends PluginPanel {
 	private final RuneProfilePlugin runeProfilePlugin;
-	private ValidPanel validPanel;
+
+	@Getter
+	private MainPanel mainPanel;
 	private InvalidPanel invalidPanel;
 
 	public RuneProfilePanel(RuneProfilePlugin runeProfilePlugin) {
+		super(false);
+		setLayout(new BorderLayout());
 
 		this.runeProfilePlugin = runeProfilePlugin;
 
-		add(new HeaderPanel());
+		add(new HeaderPanel(), BorderLayout.NORTH);
 		loadInvalidState();
-	}
-
-	private void addHeader() {
-
 	}
 
 	public void loadValidState() {
@@ -32,11 +34,9 @@ public class RuneProfilePanel extends PluginPanel {
 				remove(invalidPanel);
 			}
 
-			if (validPanel == null) {
-				validPanel = new ValidPanel(runeProfilePlugin);
-			}
+			mainPanel = new MainPanel(runeProfilePlugin);
 
-			add(validPanel);
+			add(mainPanel, BorderLayout.CENTER);
 			revalidate();
 			repaint();
 		});
@@ -44,8 +44,8 @@ public class RuneProfilePanel extends PluginPanel {
 
 	public void loadInvalidState() {
 		SwingUtilities.invokeLater(() -> {
-			if (validPanel != null) {
-				remove(validPanel);
+			if (mainPanel != null) {
+				remove(mainPanel);
 			}
 
 			if (invalidPanel == null) {
@@ -53,7 +53,7 @@ public class RuneProfilePanel extends PluginPanel {
 			}
 
 			invalidPanel.setHintText("Login to use this plugin.");
-			add(invalidPanel);
+			add(invalidPanel, BorderLayout.CENTER);
 			revalidate();
 			repaint();
 		});
@@ -61,8 +61,8 @@ public class RuneProfilePanel extends PluginPanel {
 
 	public void loadInvalidRequestState() {
 		SwingUtilities.invokeLater(() -> {
-			if (validPanel != null) {
-				remove(validPanel);
+			if (mainPanel != null) {
+				remove(mainPanel);
 			}
 
 			if (invalidPanel == null) {
@@ -70,7 +70,7 @@ public class RuneProfilePanel extends PluginPanel {
 			}
 
 			invalidPanel.setHintText("Invalid world/mode.");
-			add(invalidPanel);
+			add(invalidPanel, BorderLayout.CENTER);
 			revalidate();
 			repaint();
 		});
