@@ -37,6 +37,8 @@ Show off your best FashionScape or simply flex your best items on your character
 
 ### Skills, Quests, Achievement Diaries & Combat Achievements
 
+![Profile Data](https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/profile-data.png)
+
 Display your progress in the skills, quests, achievement diaries and combat achievements.
 
 ### Collection Log
@@ -50,6 +52,10 @@ This includes the date and the kill count(s) that you obtained it at.
 
 > 📝 This feature requires you to open the Collection Log entry and update the account after obtaining the item to
 > get the most accurate data.
+
+### Hiscores
+
+Your RuneProfile will also show your Hiscores ranks, and will be updated when you update your profile.
 
 ### Private Profile
 
