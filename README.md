@@ -63,7 +63,7 @@ This includes the date and the kill count(s) that you obtained it at.
 Your RuneProfile will also show your Hiscores ranks, and will be updated when you update your profile.
 
 <div align="center">
-    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/hiscores.png" alt="Hiscores Component">
+    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/hiscores.png" alt="Hiscores Component" height="250">
 </div>
 
 ### Private Profile
