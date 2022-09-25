@@ -1,38 +1,92 @@
-<p align="center">
-  <a href="#">
-
-  </a>
-  <p align="center">
-   <img width="150" height="150" src="/icon.png" alt="Logo">
-  </p>
-  <h1 align="center"><b>Spacedrive</b></h1>
-  <p align="center">
-  A file explorer from the future.
-    <br />
-    <a href="https://spacedrive.com"><strong>spacedrive.com »</strong></a>
-    <br />
-    <br />
-    <b>Download for </b>
-    macOS
-    ·
-    Windows
-    ·
-    Linux
-    ·
-    iOS
-    ·
-    watchOS
-    ·
-    Android
-    <br />
-    <i>~ Links will be added once a release is available. ~</i>
-  </p>
+<p align="center">  
+  <a href="https://runeprofile.com">  
+      <p align="center">  
+        <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/icon.png" width="150" height="150" alt="Logo" />  
+		</p>  
+	</a>  
+	<h1 align="center">
+    <b>RuneProfile</b>
+  </h1>
+  <a href="#"></a>  
+	<p align="center">  
+    A place to share your OSRS achievements.  
+    <br />  
+    <a href="https://runeprofile.com"><strong>runeprofile.com</strong></a> 
+    <p align="center">
+      <img src="https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/runeprofile" >
+      <img src="https://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/runeprofile">
+      <img src="https://img.shields.io/github/license/ReinhardtR/runeprofile-plugin">
+    </p>
+	</p>
+  <br />
 </p>
 
-## What is RuneProfile?
+RuneProfile aims to be a place to share your OSRS achievements with the community,
+or just your friends.
+
+The official Hiscores only shows a subset of your achievements and can be tough to navigate.
+
+RuneProfile tries to display all of your important achievements and mimic the in-game UI
+to create a familiar user experience.
 
 ## Features
 
-###     
+### Character Model
 
-## RuneLite Plugin
+Show off your best FashionScape or simply flex your best items on your character model.
+
+### Skills, Quests, Achievement Diaries & Combat Achievements
+
+Display your progress in the skills, quests, achievement diaries and combat achievements.
+
+### Collection Log
+
+Have you been spooned or are you dry? The collection log will display it, just like in the game.
+
+#### Tracking when an item was obtained
+
+Not only does the collection log show what you have obtained, but it also shows when you obtained it.
+This includes the date and the kill count(s) that you obtained it at.
+
+> NOTE: This feature requires you to open the Collection Log entry and update the account after obtaining the item to
+> get the most accurate data.
+
+## Guide
+
+### Installation
+
+Install the plugin from the RuneLite plugin hub.
+
+> NOTE: Searching "runeprofile" in the plugin hub should bring up the plugin.
+
+### Initial Setup
+
+1. Login to your account if not already logged in.
+2. Open the RuneProfile panel from the right hand side. *(look for the RuneProfile logo)*
+3. Press the "Update Account" button to send your account data to RuneProfile.com. *(runeprofile.com/u/{username})*
+4. Your RuneProfile should now be available on the RuneProfile website. *(may take a minute to update)*
+
+### Character Model
+
+To show your character model, put on your favorite outfit and press the "Update Model" button.
+> NOTE: The "Update Account"-button will not update your model. This is intentional, so you can keep the same model when
+> updating your account.
+
+### Updating the Collection Log
+
+Unfortunately, this requires a bit of manual work.
+
+1. Open the Collection Log.
+2. Open each tab and each entry to allow the plugin to read the data.
+3. Press the "Update Account" button.
+
+> NOTE: The Plugin panel has a "Collection Log"-tab that will help you keep track of what entries you have opened.
+> Open a tab in the collection log to see what entries you have missed in that tab.
+
+When you've obtained a new item, open the entry (or entries) that contains the item and press the "Update Account"
+button. This will update the entry with the new item and track when you obtained the item.
+
+> NOTE: Your RuneProfile will not accurately show when you obtained the items that were obtained before using the
+> plugin.
+
+
