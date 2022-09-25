@@ -29,6 +29,9 @@ The official Hiscores only shows a subset of your achievements and can be tough 
 RuneProfile tries to display all of your important achievements and mimic the in-game UI
 to create a familiar user experience.
 
+This plugin is needed to upload your account data to RuneProfile, which will be displayed on the RuneProfile.com
+website.
+
 ## Features
 
 ### Character Model
@@ -37,7 +40,9 @@ Show off your best FashionScape or simply flex your best items on your character
 
 ### Skills, Quests, Achievement Diaries & Combat Achievements
 
-![Profile Data](https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/profile-data.png)
+<div align="center">
+    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/profile-data.png" alt="Data Components">
+</div>
 
 Display your progress in the skills, quests, achievement diaries and combat achievements.
 
@@ -56,6 +61,10 @@ This includes the date and the kill count(s) that you obtained it at.
 ### Hiscores
 
 Your RuneProfile will also show your Hiscores ranks, and will be updated when you update your profile.
+
+<div align="center">
+    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/hiscores.png" alt="Hiscores Component" height="200">
+</div>
 
 ### Private Profile
 
