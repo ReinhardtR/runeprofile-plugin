@@ -48,16 +48,21 @@ Have you been spooned or are you dry? The collection log will display it, just l
 Not only does the collection log show what you have obtained, but it also shows when you obtained it.
 This includes the date and the kill count(s) that you obtained it at.
 
-> NOTE: This feature requires you to open the Collection Log entry and update the account after obtaining the item to
+> 📝 This feature requires you to open the Collection Log entry and update the account after obtaining the item to
 > get the most accurate data.
 
 ## Guide
+
+### Security
+
+It's not recommended to flex your account on RuneProfile if you haven't protected your account. Please follow the
+[official security guide](https://www.runescape.com/oldschool/security) by Jagex before using RuneProfile.
 
 ### Installation
 
 Install the plugin from the RuneLite plugin hub.
 
-> NOTE: Searching "runeprofile" in the plugin hub should bring up the plugin.
+> 📝 Searching "runeprofile" in the plugin hub should bring up the plugin.
 
 ### Initial Setup
 
@@ -69,7 +74,7 @@ Install the plugin from the RuneLite plugin hub.
 ### Character Model
 
 To show your character model, put on your favorite outfit and press the "Update Model" button.
-> NOTE: The "Update Account"-button will not update your model. This is intentional, so you can keep the same model when
+> 📝 The "Update Account"-button will not update your model. This is intentional, so you can keep the same model when
 > updating your account.
 
 ### Updating the Collection Log
@@ -80,13 +85,34 @@ Unfortunately, this requires a bit of manual work.
 2. Open each tab and each entry to allow the plugin to read the data.
 3. Press the "Update Account"-button.
 
-> NOTE: The Plugin panel has a "Collection Log"-tab that will help you keep track of what entries you have opened.
+> 📝 The Plugin panel has a "Collection Log"-tab that will help you keep track of what entries you have opened.
 > Open a tab in the collection log to see what entries you have missed in that tab.
 
 When you've obtained a new item, open the entry (or entries) that contains the item and press the "Update Account"
 button. This will update the entry with the new item and track when you obtained the item.
 
-> NOTE: Your RuneProfile will not accurately show when you obtained the items that were obtained before using the
+> 📝 Your RuneProfile will not accurately show when you obtained the items that were obtained before using the
 > plugin.
 
+### Making your RuneProfile private
 
+If you don't want to share your profile with everyone, you can make your RuneProfile private.
+
+1. Open the RuneProfile plugin panel.
+2. Open the Settings tab.
+3. Check the "Private Profile"-checkbox.
+
+Now your RuneProfile is only accessible by the randomly generated url below the checkbox.
+
+> 📝 If your generated url is compromised, you can generate a new one with the "Generate New URL"-button.
+
+### Description
+
+You can add a description that will be displayed on your RuneProfile.
+
+1. Open the RuneProfile plugin panel.
+2. Open the Settings tab.
+3. Write a description in the text box.
+4. Press the "Update Description"-button.
+
+Your description will now be displayed on your RuneProfile.
