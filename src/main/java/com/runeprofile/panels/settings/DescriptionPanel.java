@@ -4,6 +4,7 @@ import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.utils.DocumentSizeFilter;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 
 import javax.swing.*;
@@ -12,18 +13,14 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 
 public class DescriptionPanel extends JPanel {
 	private static final int maxLength = 100;
 	private final JLabel descriptionTitle = new JLabel("Description (" + "0" + "/" + maxLength + ")");
 	private final JTextArea descriptionEditor = new JTextArea(9, 0);
 
-	public DescriptionPanel() {
-		super(false);
-
-		this.setLayout(new BorderLayout());
+	public DescriptionPanel(RuneProfilePlugin runeProfilePlugin) {
+		setLayout(new DynamicGridLayout(0, 1, 0, 4));
 
 		descriptionTitle.setFont(FontManager.getRunescapeBoldFont());
 		descriptionTitle.setForeground(Color.WHITE);
@@ -41,13 +38,35 @@ public class DescriptionPanel extends JPanel {
 
 		initText();
 		initMaxLengthFilter();
-		initFocusListener();
 		initDocumentListener();
 
 		container.add(descriptionEditor);
 
-		add(descriptionTitle, BorderLayout.PAGE_START);
+		JButton updateButton = new JButton("Update Description");
+		updateButton.addActionListener((event) -> SwingUtilities.invokeLater(() -> {
+			updateButton.setEnabled(false);
+
+			try {
+				String newDescription = runeProfilePlugin.updateDescription(descriptionEditor.getText());
+
+				RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
+								RuneProfileConfig.CONFIG_GROUP,
+								RuneProfileConfig.DESCRIPTION,
+								newDescription
+				);
+
+				// Sync the description with the server
+				descriptionEditor.setText(newDescription);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			updateButton.setEnabled(true);
+		}));
+
+		add(descriptionTitle);
 		add(container);
+		add(updateButton);
 	}
 
 	private void initText() {
@@ -58,25 +77,6 @@ public class DescriptionPanel extends JPanel {
 
 		descriptionEditor.setText(storedDescription);
 		updateDescriptionCount();
-	}
-
-	private void initFocusListener() {
-		descriptionEditor.addFocusListener(new FocusListener() {
-			@Override
-			public void focusGained(FocusEvent e) {
-
-			}
-
-			@Override
-			public void focusLost(FocusEvent e) {
-				String newDescription = descriptionEditor.getText();
-				RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.DESCRIPTION,
-								newDescription
-				);
-			}
-		});
 	}
 
 	private void updateDescriptionCount() {

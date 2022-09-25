@@ -1,38 +1,38 @@
-# Example
+<p align="center">
+  <a href="#">
 
-On log out
-- Get collection log state
-- Get player stats state
-- Get boss kc
-- etc.
-- Send to API endpoint
+  </a>
+  <p align="center">
+   <img width="150" height="150" src="/icon.png" alt="Logo">
+  </p>
+  <h1 align="center"><b>Spacedrive</b></h1>
+  <p align="center">
+  A file explorer from the future.
+    <br />
+    <a href="https://spacedrive.com"><strong>spacedrive.com »</strong></a>
+    <br />
+    <br />
+    <b>Download for </b>
+    macOS
+    ·
+    Windows
+    ·
+    Linux
+    ·
+    iOS
+    ·
+    watchOS
+    ·
+    Android
+    <br />
+    <i>~ Links will be added once a release is available. ~</i>
+  </p>
+</p>
 
-# DB
-- Instead of sending to website api then to DB.
-- Just send straight to the DB.
+## What is RuneProfile?
 
-# Model
-- RuneLite model exporter creates a .obj file with the player model.
-- Send the player model to a database.
-- Display the 3d model with three.js.
+## Features
 
-# Collection Log
-- Collection Log export plugin
+###     
 
-# Quest Progress
-
-# Boss KC
-
-# Player Stats
-
-# Advanced Stats
-- EHP
-- Time to Max
-
-# Other
-- Maybe make a default page for all players on the hiscores.
-- Use Firebase for storing .obj files.
-- Use PlanetScale for user data.
-- Plugin uploads .obj file to Firebase.
-- If possible: plugin uploads data to PlanetScale. (Then Next.js revalidates static site.)
-- Else: plugin makes a post request to the API, and the api uploads the data to PlanetScale.
+## RuneLite Plugin

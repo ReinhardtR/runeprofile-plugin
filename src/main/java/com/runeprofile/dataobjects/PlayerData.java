@@ -21,6 +21,7 @@ import net.runelite.client.hiscore.HiscoreResult;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -67,14 +68,16 @@ public class PlayerData {
 		AtomicInteger combatLevel = new AtomicInteger();
 		AtomicInteger questPoints = new AtomicInteger();
 
-		Map<String, Integer> skills = new HashMap<>();
-		Map<AchievementDiary, AchievementDiaryState> achievementDiaries = new HashMap<>();
+		// Linked because the order is important.
+		Map<String, Integer> skills = new LinkedHashMap<>();
+		Map<AchievementDiary, AchievementDiaryState> achievementDiaries = new LinkedHashMap<>();
+
 		Map<Quest, QuestState> quests = new HashMap<>();
 		Map<CombatAchievementTier, CombatAchievementTierState> combatAchievements = new HashMap<>();
 
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 
-		runeProfilePlugin.getClientThread().invokeLater(() -> {
+		RuneProfilePlugin.getClientThread().invokeLater(() -> {
 			Client client = RuneProfilePlugin.getClient();
 			Player player = client.getLocalPlayer();
 

@@ -121,26 +121,35 @@ public class RuneProfilePlugin extends Plugin {
 
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged gameStateChanged) {
+		log.info("Game state changed: {}", gameStateChanged.getGameState());
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
-			try {
-				isValidRequest();
-			} catch (Exception e) {
+			if (!isValidWorldType(client.getWorldType())) {
 				runeProfilePanel.loadInvalidRequestState();
+				return;
 			}
 
+			// Collection Log Manager is null, if it's the first time logging in.
+			// Need to reload the manager if it's a different account.
 			if (collectionLogManager == null) {
 				collectionLogManager = new CollectionLogManager();
 			} else {
 				collectionLogManager.reloadManager();
 			}
-			
-			runeProfilePanel.loadValidState();
-		} else {
-			if (collectionLogManager != null) {
-				collectionLogManager.reloadManager();
-			}
 
+			runeProfilePanel.loadValidState();
+		} else if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN) {
 			runeProfilePanel.loadInvalidState();
+
+			// If Collection Log Manager isn't null, then the client was logged in before.
+			if (collectionLogManager != null) {
+				if (config.updateOnLogout()) {
+					try {
+						updateAccount();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 	}
 
@@ -150,13 +159,6 @@ public class RuneProfilePlugin extends Plugin {
 			collectionLogManager.onScriptPostFired(scriptPostFired);
 		}
 	}
-
-//	@Subscribe
-//	public void onVarbitChanged(VarbitChanged varbitChanged) {
-//		if (collectionLogManager != null) {
-//			collectionLogManager.onVarbitChanged(varbitChanged);
-//		}
-//	}
 
 	public void updateAccount() throws IllegalStateException, InterruptedException {
 		isValidRequest();
@@ -267,6 +269,39 @@ public class RuneProfilePlugin extends Plugin {
 		return response.get();
 	}
 
+	public String updateDescription(String description) {
+		isValidRequest();
+
+		long accountHash = client.getAccountHash();
+
+		AtomicReference<String> newDescription = new AtomicReference<>();
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+		new Thread(() -> {
+			try {
+				String newDescriptionResult = runeProfileApiClient.updateDescription(accountHash, description);
+				newDescription.set(newDescriptionResult);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			} finally {
+				latch.countDown();
+			}
+		}).start();
+
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		if (newDescription.get() == null) {
+			throw new RuntimeException("Failed to update description");
+		}
+
+		return newDescription.get();
+	}
+
 	public void deleteProfile() {
 		isValidRequest();
 
@@ -281,6 +316,15 @@ public class RuneProfilePlugin extends Plugin {
 				runeProfileApiClient.deleteProfile(accountHash);
 			}).start();
 		});
+
+		runeProfilePanel.loadInvalidState();
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.COLLECTION_LOG);
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.GENERATED_PATH);
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.DESCRIPTION);
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.IS_PRIVATE);
+		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.HAS_MODEL);
+		collectionLogManager.reloadManager();
+		runeProfilePanel.loadValidState();
 	}
 
 	private boolean isConfirmedDeletion(String message) {

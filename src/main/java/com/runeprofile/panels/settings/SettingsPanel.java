@@ -12,7 +12,7 @@ public class SettingsPanel extends JPanel {
 		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 32));
 
 		wrapper.add(new PrivateProfilePanel(runeProfilePlugin));
-		wrapper.add(new DescriptionPanel());
+		wrapper.add(new DescriptionPanel(runeProfilePlugin));
 
 		add(wrapper, BorderLayout.NORTH);
 	}

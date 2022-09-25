@@ -28,7 +28,6 @@ public class RuneProfileApiClient {
 						.port(3000)
 						.addPathSegment("api")
 						.addPathSegment("profile")
-						.addPathSegment("update")
 						.build();
 
 		// Build Request Body
@@ -39,7 +38,7 @@ public class RuneProfileApiClient {
 						.url(url)
 						.header("Content-Type", "application/json")
 						.header("User-Agent", "RuneLite")
-						.post(body)
+						.put(body)
 						.build();
 
 		// Request Call
@@ -59,7 +58,7 @@ public class RuneProfileApiClient {
 						.port(3000)
 						.addPathSegment("api")
 						.addPathSegment("profile")
-						.addPathSegment("update-model")
+						.addPathSegment("model")
 						.build();
 
 		// Build Request Body
@@ -70,7 +69,7 @@ public class RuneProfileApiClient {
 						.url(url)
 						.header("Content-Type", "application/json")
 						.header("User-Agent", "RuneLite")
-						.post(body)
+						.put(body)
 						.build();
 
 		// Request Call
@@ -90,26 +89,62 @@ public class RuneProfileApiClient {
 						.port(3000)
 						.addPathSegment("api")
 						.addPathSegment("profile")
-						.addPathSegment("update-generated-path")
-						.addQueryParameter("accountHash", String.valueOf(accountHash))
+						.addPathSegment("generated-path")
 						.build();
+
+		JsonObject jsonRequestBody = new JsonObject();
+		jsonRequestBody.addProperty("accountHash", accountHash);
+		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, jsonRequestBody.toString());
 
 		// Build Request
 		Request request = new Request.Builder()
 						.url(url)
 						.header("Content-Type", "application/json")
 						.header("User-Agent", "RuneLite")
-
+						.put(requestBody)
 						.build();
 
 		// Request Call
 		try (Response response = okHttpClient.newCall(request).execute()) {
-			JsonObject body = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
+			JsonObject responseBody = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
 			response.close();
 
-			log.info("Body: " + body);
+			return responseBody.get("generatedPath").getAsString();
+		} catch (IOException e) {
+			throw new Exception("Request call to RuneProfile API failed.");
+		}
+	}
 
-			return body.get("generatedPath").getAsString();
+	public String updateDescription(long accountHash, String description) throws Exception {
+		// Build URL
+		HttpUrl url = new HttpUrl.Builder()
+						.scheme("http")
+						.host("localhost")
+						.port(3000)
+						.addPathSegment("api")
+						.addPathSegment("profile")
+						.addPathSegment("description")
+						.build();
+
+		JsonObject jsonRequestBody = new JsonObject();
+		jsonRequestBody.addProperty("accountHash", accountHash);
+		jsonRequestBody.addProperty("description", description);
+		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, jsonRequestBody.toString());
+
+		// Build Request
+		Request request = new Request.Builder()
+						.url(url)
+						.header("Content-Type", "application/json")
+						.header("User-Agent", "RuneLite")
+						.put(requestBody)
+						.build();
+
+		// Request Call
+		try (Response response = okHttpClient.newCall(request).execute()) {
+			JsonObject responseBody = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
+			response.close();
+
+			return responseBody.get("description").getAsString();
 		} catch (IOException e) {
 			throw new Exception("Request call to RuneProfile API failed.");
 		}
@@ -123,9 +158,7 @@ public class RuneProfileApiClient {
 						.port(3000)
 						.addPathSegment("api")
 						.addPathSegment("profile")
-						.addPathSegment("update-is-private")
-						.addQueryParameter("accountHash", String.valueOf(accountHash))
-						.addQueryParameter("isPrivate", String.valueOf(isPrivate))
+						.addPathSegment("private")
 						.build();
 
 		JsonObject jsonBody = new JsonObject();
@@ -140,7 +173,7 @@ public class RuneProfileApiClient {
 						.url(url)
 						.header("Content-Type", "application/json")
 						.header("User-Agent", "RuneLite")
-						.post(requestBody)
+						.put(requestBody)
 						.build();
 
 		// Request Call
@@ -164,16 +197,18 @@ public class RuneProfileApiClient {
 						.port(3000)
 						.addPathSegment("api")
 						.addPathSegment("profile")
-						.addPathSegment("delete")
-						.addQueryParameter("accountHash", String.valueOf(accountHash))
 						.build();
+
+		JsonObject requestBodyJson = new JsonObject();
+		requestBodyJson.addProperty("accountHash", accountHash);
+		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, requestBodyJson.toString());
 
 		// Build Request
 		Request request = new Request.Builder()
 						.url(url)
 						.header("Content-Type", "application/json")
 						.header("User-Agent", "RuneLite")
-						.delete()
+						.delete(requestBody)
 						.build();
 
 		// Request Call

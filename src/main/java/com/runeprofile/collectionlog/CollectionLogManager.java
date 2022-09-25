@@ -37,9 +37,6 @@ public class CollectionLogManager {
 		this.configManager = RuneProfilePlugin.getConfigManager();
 		this.clientThread = RuneProfilePlugin.getClientThread();
 		reloadManager();
-
-//		Test
-		configManager.unsetRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.COLLECTION_LOG);
 	}
 
 	public void reloadManager() {
