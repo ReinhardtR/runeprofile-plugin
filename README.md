@@ -51,6 +51,16 @@ This includes the date and the kill count(s) that you obtained it at.
 > 📝 This feature requires you to open the Collection Log entry and update the account after obtaining the item to
 > get the most accurate data.
 
+### Private Profile
+
+If you don't want to share your achievements with the world, you can make your profile private.
+Limiting the access to your profile with a randomly generated url that you can share with your friends.
+
+### Description
+
+Are you playing on a snowflake account? Share your unique restrictions in your RuneProfile description.
+*Or shamelessly plug your Twitch stream.*
+
 ## Guide
 
 ### Security
