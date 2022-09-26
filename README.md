@@ -38,6 +38,12 @@ website.
 
 Show off your best FashionScape or simply flex your best items on your character model.
 
+<div align="center">
+    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/model.gif" alt="Character Model">
+</div>
+
+> 📝 Some items have unique or animated textures that won't be displayed correctly.
+
 ### Skills, Quests, Achievement Diaries & Combat Achievements
 
 <div align="center">
