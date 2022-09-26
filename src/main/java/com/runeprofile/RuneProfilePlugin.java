@@ -121,6 +121,7 @@ public class RuneProfilePlugin extends Plugin {
 
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged gameStateChanged) {
+
 		log.info("Game state changed: {}", gameStateChanged.getGameState());
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
 			if (!isValidWorldType(client.getWorldType())) {

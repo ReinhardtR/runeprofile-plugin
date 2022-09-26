@@ -17,15 +17,20 @@ import java.util.Objects;
 public class RuneProfileApiClient {
 	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
+	private final boolean isDevMode = false;
+
 	@Inject
 	private OkHttpClient okHttpClient;
 
+	private HttpUrl.Builder getBaseUrl() {
+		return isDevMode
+						? new HttpUrl.Builder().scheme("http").host("localhost").port(3000)
+						: new HttpUrl.Builder().scheme("https").host("runeprofile.com");
+	}
+
 	public void updateAccount(PlayerData playerData) {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.build();
@@ -52,10 +57,7 @@ public class RuneProfileApiClient {
 
 	public void updateModel(PlayerModelData playerModelData) {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.addPathSegment("model")
@@ -83,10 +85,7 @@ public class RuneProfileApiClient {
 
 	public String updateGeneratedPath(long accountHash) throws Exception {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.addPathSegment("generated-path")
@@ -117,10 +116,7 @@ public class RuneProfileApiClient {
 
 	public String updateDescription(long accountHash, String description) throws Exception {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.addPathSegment("description")
@@ -152,10 +148,7 @@ public class RuneProfileApiClient {
 
 	public JsonObject updateIsPrivate(long accountHash, boolean isPrivate) throws Exception {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.addPathSegment("private")
@@ -191,10 +184,7 @@ public class RuneProfileApiClient {
 
 	public void deleteProfile(long accountHash) {
 		// Build URL
-		HttpUrl url = new HttpUrl.Builder()
-						.scheme("http")
-						.host("localhost")
-						.port(3000)
+		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
 						.addPathSegment("profile")
 						.build();

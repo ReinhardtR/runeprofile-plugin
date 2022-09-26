@@ -58,6 +58,13 @@ public class CollectionLogManager {
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
 		if (scriptPostFired.getScriptId() == ScriptID.COLLECTION_DRAW_LIST) {
+			log.info("COLLECTION DRAW LIST FIRED");
+
+			if (RuneProfilePlugin.getClient().getWidget(WidgetInfo.ADVENTURE_LOG) != null) {
+				log.info("Adventure Log isn't supported");
+				return;
+			}
+
 			clientThread.invokeLater(this::updateCollectionLog);
 			updateCollectionLogPanel();
 		}
@@ -136,6 +143,7 @@ public class CollectionLogManager {
 		CollectionLogEntry collectionLogEntry = getEntry();
 
 		if (collectionLogEntry == null) {
+			log.error("Failed to get entry");
 			return;
 		}
 
@@ -153,6 +161,8 @@ public class CollectionLogManager {
 						RuneProfileConfig.COLLECTION_LOG,
 						collectionLog
 		);
+
+		log.info("Updated the Collection Log");
 	}
 
 	private Widget getEntryHead() {
@@ -165,6 +175,7 @@ public class CollectionLogManager {
 		int index = -1;
 
 		if (entries == null) {
+			log.error("Failed to get entry index");
 			return index;
 		}
 
@@ -172,7 +183,7 @@ public class CollectionLogManager {
 
 		for (int i = 0; i < entries.length; i++) {
 			String entryText = entries[i].getText();
-			log.info("CURRENT ENTRY TEXT: " + entryText);
+
 			if (entryText.equals(entryName)) {
 				index = i;
 				break;
@@ -193,6 +204,7 @@ public class CollectionLogManager {
 		Widget[] children = entryHead.getDynamicChildren();
 
 		if (children == null || children.length == 0) {
+			log.error("Failed to get entry name");
 			return null;
 		}
 
@@ -222,6 +234,7 @@ public class CollectionLogManager {
 			}
 		}
 
+		log.error("Failed to get tab name");
 		return null;
 	}
 
