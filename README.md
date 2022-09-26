@@ -84,7 +84,7 @@ Limiting the access to your profile with a randomly generated url that you can s
 ### Description
 
 Are you playing on a snowflake account? Share your unique restrictions in your RuneProfile description.
-*Or shamelessly plug your Twitch stream.*
+*(Or shamelessly plug your Twitch stream)*
 
 ## Guide
 
