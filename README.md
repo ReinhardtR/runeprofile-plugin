@@ -56,6 +56,10 @@ Display your progress in the skills, quests, achievement diaries and combat achi
 
 Have you been spooned or are you dry? The collection log will display it, just like in the game.
 
+<div align="center">
+    <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/assets/collection-log.png" alt="Collection Log Component" height="360">
+</div>
+
 #### Tracking when an item was obtained
 
 Not only does the collection log show what you have obtained, but it also shows when you obtained it.
