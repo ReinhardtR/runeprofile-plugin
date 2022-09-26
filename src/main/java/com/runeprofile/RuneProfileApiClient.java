@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.runeprofile.dataobjects.PlayerData;
 import com.runeprofile.dataobjects.PlayerModelData;
+import com.runeprofile.utils.DateHeader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -17,7 +18,7 @@ import java.util.Objects;
 public class RuneProfileApiClient {
 	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
-	private final boolean isDevMode = false;
+	private final boolean isDevMode = true;
 
 	@Inject
 	private OkHttpClient okHttpClient;
@@ -28,7 +29,7 @@ public class RuneProfileApiClient {
 						: new HttpUrl.Builder().scheme("https").host("runeprofile.com");
 	}
 
-	public void updateAccount(PlayerData playerData) {
+	public String updateAccount(PlayerData playerData) {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -49,13 +50,18 @@ public class RuneProfileApiClient {
 		// Request Call
 		try {
 			Response response = okHttpClient.newCall(request).execute();
+			String date = response.header("Date");
 			response.close();
+
+			return DateHeader.getDateString(date);
 		} catch (IOException e) {
 			log.error("Request call to RuneProfile API failed.");
 		}
+
+		return "Failed";
 	}
 
-	public void updateModel(PlayerModelData playerModelData) {
+	public String updateModel(PlayerModelData playerModelData) {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -77,10 +83,15 @@ public class RuneProfileApiClient {
 		// Request Call
 		try {
 			Response response = okHttpClient.newCall(request).execute();
+			String date = response.header("Date");
 			response.close();
+
+			return DateHeader.getDateString(date);
 		} catch (IOException e) {
 			log.error("Request call to RuneProfile API failed.");
 		}
+
+		return "Failed";
 	}
 
 	public String updateGeneratedPath(long accountHash) throws Exception {

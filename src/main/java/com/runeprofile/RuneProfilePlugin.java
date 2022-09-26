@@ -29,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -161,25 +162,33 @@ public class RuneProfilePlugin extends Plugin {
 		}
 	}
 
-	public void updateAccount() throws IllegalStateException, InterruptedException {
+	public String updateAccount() throws IllegalStateException, InterruptedException {
 		isValidRequest();
 
-		new Thread(() -> {
-			try {
-				PlayerData playerData = new PlayerData(this);
-				runeProfileApiClient.updateAccount(playerData);
-			} catch (IOException | InterruptedException e) {
-				throw new RuntimeException(e);
-			}
-		}).start();
+		String updateDateString;
+
+		try {
+			PlayerData playerData = new PlayerData(this);
+			updateDateString = runeProfileApiClient.updateAccount(playerData);
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.ACCOUNT_UPDATE_DATE,
+						updateDateString
+		);
+
+		return updateDateString;
 	}
 
-	public void updateModel() throws IllegalStateException, InterruptedException {
+	public String updateModel() throws IllegalStateException, InterruptedException {
 		isValidRequest();
 
 		AtomicReference<PlayerModelData> playerModelData = new AtomicReference<>();
 
-		CountDownLatch latch = new CountDownLatch(1);
+		CountDownLatch clientLatch = new CountDownLatch(1);
 
 		clientThread.invokeLater(() -> {
 			try {
@@ -187,120 +196,128 @@ public class RuneProfilePlugin extends Plugin {
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
-				latch.countDown();
+				clientLatch.countDown();
 			}
 		});
 
-		latch.await();
+		clientLatch.await();
 
-		new Thread(() -> {
-			runeProfileApiClient.updateModel(playerModelData.get());
-		}).start();
+		String updateDatetimeString;
+
+		try {
+			updateDatetimeString = runeProfileApiClient.updateModel(playerModelData.get());
+		} catch (RuntimeException e) {
+			throw new RuntimeException(e);
+		}
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.MODEL_UPDATE_DATE,
+						updateDatetimeString
+		);
+
+		return updateDatetimeString;
 	}
 
 	public String updateGeneratedPath() throws Exception {
 		isValidRequest();
 
-		long accountHash = client.getAccountHash();
+		AtomicLong accountHash = new AtomicLong();
 
-		AtomicReference<String> newUrl = new AtomicReference<>();
+		CountDownLatch clientLatch = new CountDownLatch(1);
 
-		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			accountHash.set(client.getAccountHash());
+			clientLatch.countDown();
+		});
 
-		new Thread(() -> {
-			try {
-				String newUrlResult = runeProfileApiClient.updateGeneratedPath(accountHash);
-				newUrl.set(newUrlResult);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			} finally {
-				latch.countDown();
-			}
-		}).start();
+		clientLatch.await();
 
-		latch.await();
+		String newUrl;
 
-		if (newUrl.get() == null) {
+		try {
+			newUrl = runeProfileApiClient.updateGeneratedPath(accountHash.get());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		if (newUrl == null) {
 			throw new Exception("Failed to update generated path");
 		}
 
 		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
 						RuneProfileConfig.GENERATED_PATH,
-						newUrl.get()
+						newUrl
 		);
 
-		return newUrl.get();
+		return newUrl;
 	}
 
 	public JsonObject updateIsPrivate(boolean isPrivate) throws Exception {
 		isValidRequest();
 
-		long accountHash = client.getAccountHash();
+		AtomicLong accountHash = new AtomicLong();
 
-		AtomicReference<JsonObject> response = new AtomicReference<>();
+		CountDownLatch clientLatch = new CountDownLatch(1);
 
-		CountDownLatch latch = new CountDownLatch(1);
+		clientThread.invokeLater(() -> {
+			accountHash.set(client.getAccountHash());
+			clientLatch.countDown();
+		});
 
-		new Thread(() -> {
-			try {
-				JsonObject newIsPrivateResult = runeProfileApiClient.updateIsPrivate(accountHash, isPrivate);
-				response.set(newIsPrivateResult);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			} finally {
-				latch.countDown();
-			}
-		}).start();
+		clientLatch.await();
 
-		latch.await();
-
-		configManager.setRSProfileConfiguration(
-						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.GENERATED_PATH,
-						response.get().get("isPrivate").getAsBoolean()
-		);
-
-		configManager.setRSProfileConfiguration(
-						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.GENERATED_PATH,
-						response.get().get("generatedPath").getAsString()
-		);
-
-		return response.get();
-	}
-
-	public String updateDescription(String description) {
-		isValidRequest();
-
-		long accountHash = client.getAccountHash();
-
-		AtomicReference<String> newDescription = new AtomicReference<>();
-
-		CountDownLatch latch = new CountDownLatch(1);
-
-		new Thread(() -> {
-			try {
-				String newDescriptionResult = runeProfileApiClient.updateDescription(accountHash, description);
-				newDescription.set(newDescriptionResult);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			} finally {
-				latch.countDown();
-			}
-		}).start();
+		JsonObject response;
 
 		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			response = runeProfileApiClient.updateIsPrivate(accountHash.get(), isPrivate);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 
-		if (newDescription.get() == null) {
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.GENERATED_PATH,
+						response.get("isPrivate").getAsBoolean()
+		);
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.GENERATED_PATH,
+						response.get("generatedPath").getAsString()
+		);
+
+		return response;
+	}
+
+	public String updateDescription(String description) throws Exception {
+		isValidRequest();
+
+		AtomicLong accountHash = new AtomicLong();
+
+		CountDownLatch clientLatch = new CountDownLatch(1);
+
+		clientThread.invokeLater(() -> {
+			accountHash.set(client.getAccountHash());
+			clientLatch.countDown();
+		});
+
+		clientLatch.await();
+
+		String newDescription;
+
+		try {
+			newDescription = runeProfileApiClient.updateDescription(accountHash.get(), description);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		if (newDescription == null) {
 			throw new RuntimeException("Failed to update description");
 		}
 
-		return newDescription.get();
+		return newDescription;
 	}
 
 	public void deleteProfile() {

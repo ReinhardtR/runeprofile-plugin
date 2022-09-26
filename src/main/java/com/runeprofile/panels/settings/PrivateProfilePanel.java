@@ -38,24 +38,26 @@ public class PrivateProfilePanel extends JPanel {
 		JCheckBox privateCheckbox = new JCheckBox("Private profile");
 		privateCheckbox.setToolTipText("Disables the public username URL and generates a hidden URL instead.");
 		privateCheckbox.setSelected(storedIsPrivate);
-		privateCheckbox.addActionListener((event) -> SwingUtilities.invokeLater(() -> {
-			privateCheckbox.setEnabled(false);
+		privateCheckbox.addActionListener((event) -> {
+			new Thread(() -> {
+				privateCheckbox.setEnabled(false);
 
-			try {
-				JsonObject response = runeProfilePlugin.updateIsPrivate(privateCheckbox.isSelected());
+				try {
+					JsonObject response = runeProfilePlugin.updateIsPrivate(privateCheckbox.isSelected());
 
-				// Sync checkbox with server state
-				privateCheckbox.setSelected(response.get("isPrivate").getAsBoolean());
+					// Sync checkbox with server state
+					privateCheckbox.setSelected(response.get("isPrivate").getAsBoolean());
 
-				// Sync url with possibly new generated path
-				String newURL = "runeprofile.com/u/" + response.get("generatedPath").getAsString();
-				setNewURL(newURL);
-			} catch (Exception e) {
-				privateCheckbox.setSelected(!privateCheckbox.isSelected());
-			}
+					// Sync url with possibly new generated path
+					String newURL = "runeprofile.com/u/" + response.get("generatedPath").getAsString();
+					setNewURL(newURL);
+				} catch (Exception e) {
+					privateCheckbox.setSelected(!privateCheckbox.isSelected());
+				}
 
-			privateCheckbox.setEnabled(true);
-		}));
+				privateCheckbox.setEnabled(true);
+			}).start();
+		});
 		add(privateCheckbox);
 
 		JPanel urlContainer = new JPanel();
@@ -77,7 +79,7 @@ public class PrivateProfilePanel extends JPanel {
 
 		JButton newButton = new JButton("Generate New URL");
 		newButton.addActionListener((event) -> {
-			SwingUtilities.invokeLater(() -> {
+			new Thread(() -> {
 				newButton.setEnabled(false);
 
 				try {
@@ -88,7 +90,7 @@ public class PrivateProfilePanel extends JPanel {
 				}
 
 				newButton.setEnabled(true);
-			});
+			}).start();
 		});
 		add(newButton);
 	}

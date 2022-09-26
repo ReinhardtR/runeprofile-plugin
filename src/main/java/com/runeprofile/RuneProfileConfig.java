@@ -13,6 +13,9 @@ public interface RuneProfileConfig extends Config {
 	String IS_PRIVATE = "is_private"; // The profile is unlisted/private.
 	String HAS_MODEL = "has_model"; // A model has been submitted before.
 
+	String MODEL_UPDATE_DATE = "model_update_date"; // The last time the model was updated.
+	String ACCOUNT_UPDATE_DATE = "account_update_date"; // The last time the account was updated.
+
 	@ConfigItem(keyName = "update_on_logout", name = "Update on logout", description = "Automatically update your RuneProfile on logout. (Excluding model)")
 	default boolean updateOnLogout() {
 		return true;

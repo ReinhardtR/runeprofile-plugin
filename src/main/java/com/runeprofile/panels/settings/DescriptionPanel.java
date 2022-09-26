@@ -43,26 +43,29 @@ public class DescriptionPanel extends JPanel {
 		container.add(descriptionEditor);
 
 		JButton updateButton = new JButton("Update Description");
-		updateButton.addActionListener((event) -> SwingUtilities.invokeLater(() -> {
-			updateButton.setEnabled(false);
+		updateButton.setBorder(new EmptyBorder(8, 16, 8, 16));
+		updateButton.addActionListener((event) -> {
+			new Thread(() -> {
+				updateButton.setEnabled(false);
 
-			try {
-				String newDescription = runeProfilePlugin.updateDescription(descriptionEditor.getText());
+				try {
+					String newDescription = runeProfilePlugin.updateDescription(descriptionEditor.getText());
 
-				RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.DESCRIPTION,
-								newDescription
-				);
+					RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
+									RuneProfileConfig.CONFIG_GROUP,
+									RuneProfileConfig.DESCRIPTION,
+									newDescription
+					);
 
-				// Sync the description with the server
-				descriptionEditor.setText(newDescription);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+					// Sync the description with the server
+					descriptionEditor.setText(newDescription);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 
-			updateButton.setEnabled(true);
-		}));
+				updateButton.setEnabled(true);
+			}).start();
+		});
 
 		add(descriptionTitle);
 		add(container);

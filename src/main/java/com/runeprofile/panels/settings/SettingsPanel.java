@@ -13,6 +13,7 @@ public class SettingsPanel extends JPanel {
 
 		wrapper.add(new PrivateProfilePanel(runeProfilePlugin));
 		wrapper.add(new DescriptionPanel(runeProfilePlugin));
+		wrapper.add(new DeleteProfilePanel(runeProfilePlugin));
 
 		add(wrapper, BorderLayout.NORTH);
 	}

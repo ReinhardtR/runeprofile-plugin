@@ -107,10 +107,34 @@ Install the plugin from the RuneLite plugin hub.
 3. Press the "Update Account"-button to send your account data to RuneProfile.com. *(runeprofile.com/u/{username})*
 4. Your RuneProfile should now be available on the RuneProfile website. *(may take a minute to update)*
 
-### Character Model
+### Updating the Character Model
 
 To show your character model, put on your favorite outfit and press the "Update Model" button.
 > 📝 The "Update Account"-button will not update your model. This is intentional, so you can keep the same model when
+> updating your account.
+
+### Updating the Profile (excl. model)
+
+#### Manual updates
+
+1. Open the RuneProfile plugin panel.
+2. Press the "Update Account"-button to send your account data to RuneProfile.com.
+
+#### Automatic updates on logout
+
+"Update on logout" is turned **ON** by default.
+This will automatically update your profile when you log out of the game.
+
+To turn it **OFF** follow these steps.
+
+1. Open the list of plugins you have installed.
+2. Find the RuneProfile plugin and click the cog icon.
+3. Disable the "Update on logout" option.
+
+Now your profile will **NOT** be updated when you log out of the game, and your next YouTube video isn't gonna be
+spoiled.
+
+> 📝 Neither of these update methods will update your model. This is intentional, so you can keep the same model when
 > updating your account.
 
 ### Updating the Collection Log
@@ -142,7 +166,7 @@ Now your RuneProfile is only accessible by the randomly generated url below the 
 
 > 📝 If your generated url is compromised, you can generate a new one with the "Generate New URL"-button.
 
-### Description
+### Adding a Description
 
 You can add a description that will be displayed on your RuneProfile.
 
