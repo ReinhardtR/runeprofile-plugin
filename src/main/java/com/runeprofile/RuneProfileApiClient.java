@@ -18,7 +18,7 @@ import java.util.Objects;
 public class RuneProfileApiClient {
 	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
-	private final boolean isDevMode = true;
+	private final boolean isDevMode = false;
 
 	@Inject
 	private OkHttpClient okHttpClient;
@@ -26,7 +26,7 @@ public class RuneProfileApiClient {
 	private HttpUrl.Builder getBaseUrl() {
 		return isDevMode
 						? new HttpUrl.Builder().scheme("http").host("localhost").port(3000)
-						: new HttpUrl.Builder().scheme("https").host("runeprofile.com");
+						: new HttpUrl.Builder().scheme("https").host("www.runeprofile.com");
 	}
 
 	public String updateAccount(PlayerData playerData) {
