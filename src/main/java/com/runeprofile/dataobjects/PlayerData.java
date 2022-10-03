@@ -12,7 +12,6 @@ import com.runeprofile.collectionlog.CollectionLog;
 import com.runeprofile.combatachievements.CombatAchievementTier;
 import com.runeprofile.combatachievements.CombatAchievementTierState;
 import com.runeprofile.leaderboards.Leaderboards;
-import com.runeprofile.playermodel.PlayerModelExporter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -139,7 +138,7 @@ public class PlayerData {
 		json.addProperty("accountType", accountType.get().toString());
 
 		if (model.get() != null) {
-			json.addProperty("model", PlayerModelExporter.export(model.get(), username.get()));
+			json.addProperty("model", "test");
 		}
 
 		json.addProperty("combatLevel", combatLevel.get());
@@ -163,13 +162,17 @@ public class PlayerData {
 	private JsonArray createSkillsXPJSON(Map<String, Integer> skills) {
 		JsonArray skillsJSON = new JsonArray();
 
+		int index = 0;
 		for (Map.Entry<String, Integer> skill : skills.entrySet()) {
 			JsonObject skillJSON = new JsonObject();
 
+			skillJSON.addProperty("index", index);
 			skillJSON.addProperty("name", skill.getKey());
 			skillJSON.addProperty("xp", skill.getValue());
 
 			skillsJSON.add(skillJSON);
+
+			index++;
 		}
 
 		return skillsJSON;
@@ -263,7 +266,7 @@ public class PlayerData {
 			try {
 				result = RuneProfilePlugin.getHiscoreClient().lookup(username, leaderboard.getEndpoint());
 			} catch (IOException e) {
-				log.error("Error looking up hiscore", e);
+				log.error("Error looking up hiscores", e);
 			}
 
 			if (result == null) {
@@ -276,8 +279,10 @@ public class PlayerData {
 				continue;
 			}
 
+			AtomicInteger index = new AtomicInteger();
 			result.getSkills().forEach((hiscore, data) -> {
 				JsonObject entryItem = new JsonObject();
+				entryItem.addProperty("index", index.get());
 				entryItem.addProperty("name", hiscore.getName());
 				entryItem.addProperty("rank", data.getRank());
 
@@ -299,6 +304,8 @@ public class PlayerData {
 					default:
 						break;
 				}
+
+				index.getAndIncrement();
 			});
 
 			JsonObject entry = new JsonObject();

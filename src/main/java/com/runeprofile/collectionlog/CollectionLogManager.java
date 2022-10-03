@@ -289,7 +289,7 @@ public class CollectionLogManager {
 			String killCountName = killCountParts[0];
 			int killCountAmount = Integer.parseInt(unwrapText(killCountParts[1]));
 
-			killCounts.add(new CollectionLogKillCount(killCountName, killCountAmount));
+			killCounts.add(new CollectionLogKillCount(childIndex - 2, killCountName, killCountAmount));
 		}
 
 		return killCounts;

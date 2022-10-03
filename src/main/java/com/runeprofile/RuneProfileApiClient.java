@@ -24,9 +24,10 @@ public class RuneProfileApiClient {
 	private OkHttpClient okHttpClient;
 
 	private HttpUrl.Builder getBaseUrl() {
+		log.info("DEV: " + isDevMode);
 		return isDevMode
 						? new HttpUrl.Builder().scheme("http").host("localhost").port(3000)
-						: new HttpUrl.Builder().scheme("https").host("runeprofile.com");
+						: new HttpUrl.Builder().scheme("https").host("www.runeprofile.com");
 	}
 
 	public String updateAccount(PlayerData playerData) {
@@ -52,6 +53,9 @@ public class RuneProfileApiClient {
 			Response response = okHttpClient.newCall(request).execute();
 			String date = response.header("Date");
 			response.close();
+
+			log.info("URL: " + url);
+			log.info("Response: " + response);
 
 			return DateHeader.getDateString(date);
 		} catch (IOException e) {
