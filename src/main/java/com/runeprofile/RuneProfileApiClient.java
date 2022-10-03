@@ -18,7 +18,7 @@ import java.util.Objects;
 public class RuneProfileApiClient {
 	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
-	private final boolean isDevMode = true;
+	private final boolean isDevMode = false;
 
 	@Inject
 	private OkHttpClient okHttpClient;
