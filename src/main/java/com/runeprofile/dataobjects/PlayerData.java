@@ -63,7 +63,6 @@ public class PlayerData {
 		AtomicLong accountHash = new AtomicLong();
 		AtomicReference<String> username = new AtomicReference<>();
 		AtomicReference<AccountType> accountType = new AtomicReference<>();
-		AtomicReference<Model> model = new AtomicReference<>();
 		AtomicInteger combatLevel = new AtomicInteger();
 		AtomicInteger questPoints = new AtomicInteger();
 
@@ -84,22 +83,6 @@ public class PlayerData {
 			accountHash.set(client.getAccountHash());
 			username.set(player.getName());
 			accountType.set(client.getAccountType());
-
-			boolean hasModel = Boolean.parseBoolean(
-							RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(
-											RuneProfileConfig.CONFIG_GROUP,
-											RuneProfileConfig.HAS_MODEL
-							)
-			);
-
-			if (!hasModel) {
-				model.set(player.getModel());
-				RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
-								RuneProfileConfig.CONFIG_GROUP,
-								RuneProfileConfig.HAS_MODEL,
-								"true"
-				);
-			}
 
 			// Skills
 			combatLevel.set(player.getCombatLevel());
@@ -136,11 +119,6 @@ public class PlayerData {
 		json.addProperty("accountHash", accountHash.get());
 		json.addProperty("username", username.get());
 		json.addProperty("accountType", accountType.get().toString());
-
-		if (model.get() != null) {
-			json.addProperty("model", "test");
-		}
-
 		json.addProperty("combatLevel", combatLevel.get());
 		json.addProperty("description", getDescription());
 
@@ -153,10 +131,16 @@ public class PlayerData {
 	}
 
 	private String getDescription() {
-		return RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(
+		String storedDescription = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
 						RuneProfileConfig.DESCRIPTION
 		);
+
+		if (storedDescription == null) {
+			return "";
+		}
+
+		return storedDescription;
 	}
 
 	private JsonArray createSkillsXPJSON(Map<String, Integer> skills) {

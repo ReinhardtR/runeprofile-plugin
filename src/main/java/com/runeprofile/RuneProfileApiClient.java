@@ -54,8 +54,9 @@ public class RuneProfileApiClient {
 			String date = response.header("Date");
 			response.close();
 
-			log.info("URL: " + url);
-			log.info("Response: " + response);
+			if (!response.isSuccessful()) {
+				return "Failed";
+			}
 
 			return DateHeader.getDateString(date);
 		} catch (IOException e) {
