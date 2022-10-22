@@ -12,13 +12,14 @@ import okhttp3.*;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
 public class RuneProfileApiClient {
 	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
-	private final boolean isDevMode = false;
+	private final boolean isDevMode = true;
 
 	@Inject
 	private OkHttpClient okHttpClient;
@@ -30,7 +31,7 @@ public class RuneProfileApiClient {
 						: new HttpUrl.Builder().scheme("https").host("www.runeprofile.com");
 	}
 
-	public String updateAccount(PlayerData playerData) {
+	public String updateProfile(PlayerData playerData) {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -48,16 +49,18 @@ public class RuneProfileApiClient {
 						.put(body)
 						.build();
 
-		// Request Call
-		try {
-			Response response = okHttpClient.newCall(request).execute();
-			String date = response.header("Date");
-			response.close();
+		OkHttpClient extendedTimeoutClient = okHttpClient.newBuilder()
+						.readTimeout(30, TimeUnit.SECONDS)
+						.build();
 
+		// Request Call
+		try (Response response = extendedTimeoutClient.newCall(request).execute()) {
 			if (!response.isSuccessful()) {
 				return "Failed";
 			}
 
+			String date = response.header("Date");
+			response.close();
 			return DateHeader.getDateString(date);
 		} catch (IOException e) {
 			log.error("Request call to RuneProfile API failed.");
@@ -86,8 +89,11 @@ public class RuneProfileApiClient {
 						.build();
 
 		// Request Call
-		try {
-			Response response = okHttpClient.newCall(request).execute();
+		try (Response response = okHttpClient.newCall(request).execute()) {
+			if (!response.isSuccessful()) {
+				return "Failed";
+			}
+
 			String date = response.header("Date");
 			response.close();
 
@@ -99,7 +105,7 @@ public class RuneProfileApiClient {
 		return "Failed";
 	}
 
-	public String updateGeneratedPath(long accountHash) throws Exception {
+	public String updateGeneratedPath(String accountHash) throws Exception {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -130,7 +136,7 @@ public class RuneProfileApiClient {
 		}
 	}
 
-	public String updateDescription(long accountHash, String description) throws Exception {
+	public String updateDescription(String accountHash, String description) throws Exception {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -162,7 +168,7 @@ public class RuneProfileApiClient {
 		}
 	}
 
-	public JsonObject updateIsPrivate(long accountHash, boolean isPrivate) throws Exception {
+	public JsonObject updateIsPrivate(String accountHash, boolean isPrivate) throws Exception {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")
@@ -198,7 +204,7 @@ public class RuneProfileApiClient {
 		}
 	}
 
-	public void deleteProfile(long accountHash) {
+	public void deleteProfile(String accountHash) {
 		// Build URL
 		HttpUrl url = getBaseUrl()
 						.addPathSegment("api")

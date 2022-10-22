@@ -12,6 +12,7 @@ import com.runeprofile.collectionlog.CollectionLog;
 import com.runeprofile.combatachievements.CombatAchievementTier;
 import com.runeprofile.combatachievements.CombatAchievementTierState;
 import com.runeprofile.leaderboards.Leaderboards;
+import com.runeprofile.utils.AccountHash;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -60,7 +61,7 @@ public class PlayerData {
 	private final JsonObject json;
 
 	public PlayerData(RuneProfilePlugin runeProfilePlugin) throws IllegalArgumentException, IOException, InterruptedException {
-		AtomicLong accountHash = new AtomicLong();
+		AtomicReference<String> accountHash = new AtomicReference<>();
 		AtomicReference<String> username = new AtomicReference<>();
 		AtomicReference<AccountType> accountType = new AtomicReference<>();
 		AtomicInteger combatLevel = new AtomicInteger();
@@ -80,7 +81,7 @@ public class PlayerData {
 			Player player = client.getLocalPlayer();
 
 			// Misc
-			accountHash.set(client.getAccountHash());
+			accountHash.set(AccountHash.getHashed(client));
 			username.set(player.getName());
 			accountType.set(client.getAccountType());
 

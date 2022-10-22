@@ -6,6 +6,7 @@ import com.google.inject.Provides;
 import com.runeprofile.collectionlog.CollectionLogManager;
 import com.runeprofile.dataobjects.PlayerData;
 import com.runeprofile.dataobjects.PlayerModelData;
+import com.runeprofile.utils.AccountHash;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -29,7 +30,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -146,7 +146,7 @@ public class RuneProfilePlugin extends Plugin {
 			if (collectionLogManager != null) {
 				if (config.updateOnLogout()) {
 					try {
-						updateAccount();
+						updateProfile();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -162,18 +162,19 @@ public class RuneProfilePlugin extends Plugin {
 		}
 	}
 
-	public String updateAccount() throws IllegalStateException, InterruptedException {
+	public String updateProfile() throws IllegalStateException, InterruptedException {
 		isValidRequest();
 
 		String updateDateString;
 
 		try {
 			PlayerData playerData = new PlayerData(this);
-			updateDateString = runeProfileApiClient.updateAccount(playerData);
+			updateDateString = runeProfileApiClient.updateProfile(playerData);
 		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);
 		}
 
+		log.info("NEW DATE STRING: " + updateDateString);
 		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
 						RuneProfileConfig.ACCOUNT_UPDATE_DATE,
@@ -222,12 +223,12 @@ public class RuneProfilePlugin extends Plugin {
 	public String updateGeneratedPath() throws Exception {
 		isValidRequest();
 
-		AtomicLong accountHash = new AtomicLong();
+		AtomicReference<String> accountHash = new AtomicReference<>();
 
 		CountDownLatch clientLatch = new CountDownLatch(1);
 
 		clientThread.invokeLater(() -> {
-			accountHash.set(client.getAccountHash());
+			accountHash.set(AccountHash.getHashed(client));
 			clientLatch.countDown();
 		});
 
@@ -257,12 +258,12 @@ public class RuneProfilePlugin extends Plugin {
 	public JsonObject updateIsPrivate(boolean isPrivate) throws Exception {
 		isValidRequest();
 
-		AtomicLong accountHash = new AtomicLong();
+		AtomicReference<String> accountHash = new AtomicReference<>();
 
 		CountDownLatch clientLatch = new CountDownLatch(1);
 
 		clientThread.invokeLater(() -> {
-			accountHash.set(client.getAccountHash());
+			accountHash.set(AccountHash.getHashed(client));
 			clientLatch.countDown();
 		});
 
@@ -294,12 +295,12 @@ public class RuneProfilePlugin extends Plugin {
 	public String updateDescription(String description) throws Exception {
 		isValidRequest();
 
-		AtomicLong accountHash = new AtomicLong();
+		AtomicReference<String> accountHash = new AtomicReference<>();
 
 		CountDownLatch clientLatch = new CountDownLatch(1);
 
 		clientThread.invokeLater(() -> {
-			accountHash.set(client.getAccountHash());
+			accountHash.set(AccountHash.getHashed(client));
 			clientLatch.countDown();
 		});
 
@@ -328,7 +329,7 @@ public class RuneProfilePlugin extends Plugin {
 		}
 
 		clientThread.invokeLater(() -> {
-			long accountHash = client.getAccountHash();
+			String accountHash = AccountHash.getHashed(client);
 
 			new Thread(() -> {
 				runeProfileApiClient.deleteProfile(accountHash);

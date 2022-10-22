@@ -27,7 +27,7 @@ public class HomePanel extends JPanel {
 		wrapper.add(updatedAccountLabel);
 
 		// Update account button
-		JButton updateAccountButton = new JButton("Update Account");
+		JButton updateAccountButton = new JButton("Update Profile");
 		updateAccountButton.setBorder(buttonBorder);
 		updateAccountButton.addActionListener((event) -> {
 			new Thread(() -> {
@@ -36,11 +36,12 @@ public class HomePanel extends JPanel {
 				String lastUpdated = "Failed";
 
 				try {
-					lastUpdated = runeProfilePlugin.updateAccount();
+					lastUpdated = runeProfilePlugin.updateProfile();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 
+				log.info("NEW UPDATE: " + lastUpdated);
 				updatedAccountLabel.setText("Last update: " + lastUpdated);
 				updateAccountButton.setEnabled(true);
 			}).start();

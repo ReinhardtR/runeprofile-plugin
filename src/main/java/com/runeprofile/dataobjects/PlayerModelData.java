@@ -3,6 +3,7 @@ package com.runeprofile.dataobjects;
 
 import com.google.gson.JsonObject;
 import com.runeprofile.playermodel.PlayerModelExporter;
+import com.runeprofile.utils.AccountHash;
 import lombok.Getter;
 import net.runelite.api.Client;
 
@@ -15,7 +16,7 @@ public class PlayerModelData {
 	public PlayerModelData(Client client) throws IllegalArgumentException, IOException {
 		json = new JsonObject();
 
-		json.addProperty("accountHash", client.getAccountHash());
+		json.addProperty("accountHash", AccountHash.getHashed(client));
 		json.addProperty(
 						"model",
 						PlayerModelExporter.export(
