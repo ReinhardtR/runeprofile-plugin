@@ -54,7 +54,11 @@ public class CollectionLogPanel extends JPanel {
 				loadNoMissingEntriesState();
 			} else {
 				missingEntriesListModel.removeAllElements();
-				missingEntriesListModel.addAll(missingEntries);
+
+				for (String missingEntry : missingEntries) {
+					missingEntriesListModel.addElement(missingEntry);
+				}
+
 				missingEntriesList.revalidate();
 				missingEntriesList.repaint();
 			}
