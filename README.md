@@ -1,7 +1,7 @@
 <p align="center">  
   <a href="https://runeprofile.com">  
       <p align="center">  
-        <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/master/icon.png" width="150" height="150" alt="Logo" />  
+        <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/19b9e71c0135a06566e88b6d8ad96c0b86883c03/src/main/resources/logo.png" width="150" height="150" alt="Logo" />  
 		</p>  
 	</a>  
 	<h1 align="center">
