@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -74,31 +73,37 @@ public class PlayerData {
 		Map<Quest, QuestState> quests = new HashMap<>();
 		Map<CombatAchievementTier, CombatAchievementTierState> combatAchievements = new HashMap<>();
 
-		CountDownLatch countDownLatch = new CountDownLatch(1);
+		CountDownLatch latch = new CountDownLatch(1);
 
 		RuneProfilePlugin.getClientThread().invokeLater(() -> {
+			log.info("Getting client");
 			Client client = RuneProfilePlugin.getClient();
+
+			log.info("Getting player");
 			Player player = client.getLocalPlayer();
 
 			// Misc
+			log.info("Getting misc data");
 			accountHash.set(AccountHash.getHashed(client));
 			username.set(player.getName());
 			accountType.set(client.getAccountType());
 
-			// Skills
 			combatLevel.set(player.getCombatLevel());
 
+			// Skills
+			log.info("Getting skills");
 			skillsOrder.forEach((skill -> {
 				skills.put(skill.getName(), client.getSkillExperience(skill));
-				;
 			}));
 
 			// Achievement Diaries
+			log.info("Getting achievement diary data");
 			for (AchievementDiary achievementDiary : AchievementDiary.values()) {
 				achievementDiaries.put(achievementDiary, achievementDiary.getState(client));
 			}
 
 			// Quests
+			log.info("Getting quest data");
 			questPoints.set(client.getVarpValue(VarPlayer.QUEST_POINTS));
 
 			for (Quest quest : Quest.values()) {
@@ -106,14 +111,15 @@ public class PlayerData {
 			}
 
 			// Combat Achievements
+			log.info("Getting combat achievement data");
 			for (CombatAchievementTier combatAchievementTier : CombatAchievementTier.values()) {
 				combatAchievements.put(combatAchievementTier, combatAchievementTier.getState(client));
 			}
 
-			countDownLatch.countDown();
+			latch.countDown();
 		});
 
-		countDownLatch.await();
+		latch.await();
 
 		json = new JsonObject();
 

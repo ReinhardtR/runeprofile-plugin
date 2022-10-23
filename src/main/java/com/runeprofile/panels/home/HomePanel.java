@@ -26,28 +26,28 @@ public class HomePanel extends JPanel {
 
 		wrapper.add(updatedAccountLabel);
 
-		// Update account button
-		JButton updateAccountButton = new JButton("Update Profile");
-		updateAccountButton.setBorder(buttonBorder);
-		updateAccountButton.addActionListener((event) -> {
+		// Update profile button
+		JButton updateProfileButton = new JButton("Update Profile");
+		updateProfileButton.setBorder(buttonBorder);
+		updateProfileButton.addActionListener((event) -> {
 			new Thread(() -> {
-				updateAccountButton.setEnabled(false);
+				updateProfileButton.setEnabled(false);
 
 				String lastUpdated = "Failed";
 
 				try {
 					lastUpdated = runeProfilePlugin.updateProfile();
-				} catch (InterruptedException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
 				log.info("NEW UPDATE: " + lastUpdated);
 				updatedAccountLabel.setText("Last update: " + lastUpdated);
-				updateAccountButton.setEnabled(true);
+				updateProfileButton.setEnabled(true);
 			}).start();
 		});
 
-		wrapper.add(updateAccountButton);
+		wrapper.add(updateProfileButton);
 
 		// Update model label
 		String updatedModelDate = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.MODEL_UPDATE_DATE);
@@ -70,7 +70,7 @@ public class HomePanel extends JPanel {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				
+
 				updatedModelLabel.setText("Last update: " + lastUpdated);
 				updateModelButton.setEnabled(true);
 			}).start();

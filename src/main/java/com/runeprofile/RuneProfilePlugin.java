@@ -121,10 +121,10 @@ public class RuneProfilePlugin extends Plugin {
 	}
 
 	@Subscribe
-	private void onGameStateChanged(GameStateChanged gameStateChanged) {
+	private void onGameStateChanged(GameStateChanged state) {
 
-		log.info("Game state changed: {}", gameStateChanged.getGameState());
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
+		log.info("Game state changed: {}", state.getGameState());
+		if (state.getGameState() == GameState.LOGGED_IN) {
 			if (!isValidWorldType(client.getWorldType())) {
 				runeProfilePanel.loadInvalidRequestState();
 				return;
@@ -139,18 +139,17 @@ public class RuneProfilePlugin extends Plugin {
 			}
 
 			runeProfilePanel.loadValidState();
-		} else if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN) {
+		} else if (state.getGameState() == GameState.LOGIN_SCREEN) {
 			runeProfilePanel.loadInvalidState();
 
-			// If Collection Log Manager isn't null, then the client was logged in before.
-			if (collectionLogManager != null) {
-				if (config.updateOnLogout()) {
+			if (config.updateOnLogout() && collectionLogManager != null && client.getLocalPlayer() != null) {
+				new Thread(() -> {
 					try {
 						updateProfile();
 					} catch (InterruptedException e) {
-						e.printStackTrace();
+						throw new RuntimeException(e);
 					}
-				}
+				}).start();
 			}
 		}
 	}
