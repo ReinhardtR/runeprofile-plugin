@@ -11,7 +11,7 @@ import java.util.List;
 @Slf4j
 public class CollectionLogPanel extends JPanel {
 	private final JList<String> missingEntriesList;
-	private final DefaultListModel<String> missingEntriesListModel;
+	private final DefaultListModel<String> missingEntriesListModel = new DefaultListModel<>();
 
 	public CollectionLogPanel() {
 		setLayout(new BorderLayout());
@@ -27,7 +27,6 @@ public class CollectionLogPanel extends JPanel {
 
 		add(infoPanel, BorderLayout.NORTH);
 
-		missingEntriesListModel = new DefaultListModel<>();
 		missingEntriesList = new JList<>(missingEntriesListModel);
 		missingEntriesList.setLayout(new BorderLayout());
 		missingEntriesList.setBackground(ColorScheme.DARKER_GRAY_COLOR);
