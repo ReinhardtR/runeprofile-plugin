@@ -1,5 +1,6 @@
 package com.runeprofile.collectionlog;
 
+import com.google.gson.Gson;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.Getter;
@@ -25,9 +26,8 @@ public class CollectionLogManager {
 	private final Client client;
 	private final ClientThread clientThread;
 	private final ConfigManager configManager;
-
+	private final Gson gson;
 	private String previousTab = null;
-
 	@Getter
 	private CollectionLog collectionLog;
 
@@ -35,6 +35,7 @@ public class CollectionLogManager {
 		this.client = RuneProfilePlugin.getClient();
 		this.configManager = RuneProfilePlugin.getConfigManager();
 		this.clientThread = RuneProfilePlugin.getClientThread();
+		this.gson = RuneProfilePlugin.getGson();
 		reloadManager();
 	}
 
@@ -52,7 +53,7 @@ public class CollectionLogManager {
 			return new CollectionLog();
 		}
 
-		return RuneProfilePlugin.getGson().fromJson(collectionLogString, CollectionLog.class);
+		return gson.fromJson(collectionLogString, CollectionLog.class);
 	}
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
