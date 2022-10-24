@@ -31,7 +31,7 @@ public class HomePanel extends JPanel {
 		updateProfileButton.setBorder(buttonBorder);
 		updateProfileButton.addActionListener((event) -> {
 			new Thread(() -> {
-				updateProfileButton.setEnabled(false);
+				SwingUtilities.invokeLater(() -> updateProfileButton.setEnabled(false));
 
 				String lastUpdated = "Failed";
 
@@ -41,9 +41,11 @@ public class HomePanel extends JPanel {
 					e.printStackTrace();
 				}
 
-				log.info("NEW UPDATE: " + lastUpdated);
-				updatedAccountLabel.setText("Last update: " + lastUpdated);
-				updateProfileButton.setEnabled(true);
+				String finalLastUpdated = lastUpdated;
+				SwingUtilities.invokeLater(() -> {
+					updatedAccountLabel.setText("Last update: " + finalLastUpdated);
+					updateProfileButton.setEnabled(true);
+				});
 			}).start();
 		});
 
@@ -61,7 +63,7 @@ public class HomePanel extends JPanel {
 		updateModelButton.setBorder(buttonBorder);
 		updateModelButton.addActionListener((event) -> {
 			new Thread(() -> {
-				updateModelButton.setEnabled(false);
+				SwingUtilities.invokeLater(() -> updateModelButton.setEnabled(false));
 
 				String lastUpdated = "Failed";
 
@@ -71,8 +73,11 @@ public class HomePanel extends JPanel {
 					e.printStackTrace();
 				}
 
-				updatedModelLabel.setText("Last update: " + lastUpdated);
-				updateModelButton.setEnabled(true);
+				String finalLastUpdated = lastUpdated;
+				SwingUtilities.invokeLater(() -> {
+					updatedModelLabel.setText("Last update: " + finalLastUpdated);
+					updateModelButton.setEnabled(true);
+				});
 			}).start();
 		});
 

@@ -93,6 +93,10 @@ public class RuneProfilePlugin extends Plugin {
 		return instance.configManager;
 	}
 
+	public static Gson getGson() {
+		return instance.gson;
+	}
+
 	public static RuneProfilePanel getPanel() {
 		return instance.runeProfilePanel;
 	}
@@ -171,7 +175,7 @@ public class RuneProfilePlugin extends Plugin {
 		String updateDateString;
 
 		try {
-			PlayerData playerData = new PlayerData(this);
+			PlayerData playerData = new PlayerData();
 			updateDateString = runeProfileApiClient.updateProfile(playerData);
 		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);

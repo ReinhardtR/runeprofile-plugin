@@ -32,7 +32,6 @@ public class CollectionLogManager {
 	@Getter
 	private CollectionLog collectionLog;
 
-	@Inject
 	public CollectionLogManager(Gson gson) {
 		this.gson = gson;
 		this.client = RuneProfilePlugin.getClient();

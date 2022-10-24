@@ -59,7 +59,7 @@ public class PlayerData {
 	@Getter
 	private final JsonObject json;
 
-	public PlayerData(RuneProfilePlugin runeProfilePlugin) throws IllegalArgumentException, IOException, InterruptedException {
+	public PlayerData() throws IllegalArgumentException, IOException, InterruptedException {
 		AtomicReference<String> accountHash = new AtomicReference<>();
 		AtomicReference<String> username = new AtomicReference<>();
 		AtomicReference<AccountType> accountType = new AtomicReference<>();
@@ -171,7 +171,8 @@ public class PlayerData {
 
 	private JsonObject createCollectionLogJSON() {
 		CollectionLog collectionLog = RuneProfilePlugin.getCollectionLogManager().getCollectionLog();
-		return new JsonParser().parse(collectionLog.toString()).getAsJsonObject();
+		String jsonString = RuneProfilePlugin.getGson().toJson(collectionLog);
+		return new JsonParser().parse(jsonString).getAsJsonObject();
 	}
 
 	private JsonArray getAchievementDiariesJSON(Map<AchievementDiary, AchievementDiaryState> achievementDiaries) {

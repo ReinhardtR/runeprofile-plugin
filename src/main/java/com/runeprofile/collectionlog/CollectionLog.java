@@ -1,6 +1,7 @@
 package com.runeprofile.collectionlog;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -10,10 +11,10 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 public class CollectionLog {
+
 	// First map is a tab, second map is the entries in the tab
 	private final Map<String, Map<String, CollectionLogEntry>> tabs = new HashMap<>();
-	@Inject
-	private Gson gson;
+
 	@Setter
 	private int uniqueItemsTotal;
 
@@ -28,10 +29,5 @@ public class CollectionLog {
 		tabs.put(key, new HashMap<>());
 
 		return tabs.get(key);
-	}
-
-	@Override
-	public String toString() {
-		return gson.toJson(this);
 	}
 }
