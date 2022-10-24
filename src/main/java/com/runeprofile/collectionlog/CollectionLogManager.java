@@ -14,6 +14,7 @@ import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -31,11 +32,12 @@ public class CollectionLogManager {
 	@Getter
 	private CollectionLog collectionLog;
 
-	public CollectionLogManager() {
+	@Inject
+	public CollectionLogManager(Gson gson) {
+		this.gson = gson;
 		this.client = RuneProfilePlugin.getClient();
 		this.configManager = RuneProfilePlugin.getConfigManager();
 		this.clientThread = RuneProfilePlugin.getClientThread();
-		this.gson = RuneProfilePlugin.getGson();
 		reloadManager();
 	}
 

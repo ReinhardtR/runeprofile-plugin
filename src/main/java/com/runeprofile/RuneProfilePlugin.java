@@ -97,10 +97,6 @@ public class RuneProfilePlugin extends Plugin {
 		return instance.runeProfilePanel;
 	}
 
-	public static Gson getGson() {
-		return instance.gson;
-	}
-
 	@Provides
 	RuneProfileConfig provideConfig(ConfigManager configManager) {
 		return configManager.getConfig(RuneProfileConfig.class);
@@ -141,7 +137,7 @@ public class RuneProfilePlugin extends Plugin {
 			// Collection Log Manager is null, if it's the first time logging in.
 			// Need to reload the manager if it's a different account.
 			if (collectionLogManager == null) {
-				collectionLogManager = new CollectionLogManager();
+				collectionLogManager = new CollectionLogManager(gson);
 			} else {
 				collectionLogManager.reloadManager();
 			}
