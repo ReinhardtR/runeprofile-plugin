@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,7 +12,8 @@ import java.util.Map;
 public class CollectionLog {
 	// First map is a tab, second map is the entries in the tab
 	private final Map<String, Map<String, CollectionLogEntry>> tabs = new HashMap<>();
-
+	@Inject
+	private Gson gson;
 	@Setter
 	private int uniqueItemsTotal;
 
@@ -30,6 +32,6 @@ public class CollectionLog {
 
 	@Override
 	public String toString() {
-		return new Gson().toJson(this);
+		return gson.toJson(this);
 	}
 }
