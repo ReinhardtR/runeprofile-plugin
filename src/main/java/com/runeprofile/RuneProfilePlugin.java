@@ -1,6 +1,7 @@
 package com.runeprofile;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.Provides;
 import com.runeprofile.collectionlog.CollectionLogManager;
@@ -65,6 +66,9 @@ public class RuneProfilePlugin extends Plugin {
 	@Inject
 	private ConfigManager configManager;
 
+	@Inject
+	private Gson gson;
+
 	private RuneProfilePanel runeProfilePanel;
 	private NavigationButton navigationButton;
 	private CollectionLogManager collectionLogManager;
@@ -91,6 +95,10 @@ public class RuneProfilePlugin extends Plugin {
 
 	public static RuneProfilePanel getPanel() {
 		return instance.runeProfilePanel;
+	}
+
+	public static Gson getGson() {
+		return instance.gson;
 	}
 
 	@Provides

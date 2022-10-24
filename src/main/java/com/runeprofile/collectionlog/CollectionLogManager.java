@@ -1,6 +1,5 @@
 package com.runeprofile.collectionlog;
 
-import com.google.gson.Gson;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.Getter;
@@ -53,7 +52,7 @@ public class CollectionLogManager {
 			return new CollectionLog();
 		}
 
-		return new Gson().fromJson(collectionLogString, CollectionLog.class);
+		return RuneProfilePlugin.getGson().fromJson(collectionLogString, CollectionLog.class);
 	}
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
