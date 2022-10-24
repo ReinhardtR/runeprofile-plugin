@@ -46,7 +46,7 @@ public class DescriptionPanel extends JPanel {
 		updateButton.setBorder(new EmptyBorder(8, 16, 8, 16));
 		updateButton.addActionListener((event) -> {
 			new Thread(() -> {
-				updateButton.setEnabled(false);
+				SwingUtilities.invokeLater(() -> updateButton.setEnabled(false));
 
 				try {
 					String newDescription = runeProfilePlugin.updateDescription(descriptionEditor.getText());
@@ -63,7 +63,7 @@ public class DescriptionPanel extends JPanel {
 					e.printStackTrace();
 				}
 
-				updateButton.setEnabled(true);
+				SwingUtilities.invokeLater(() -> updateButton.setEnabled(true));
 			}).start();
 		});
 
