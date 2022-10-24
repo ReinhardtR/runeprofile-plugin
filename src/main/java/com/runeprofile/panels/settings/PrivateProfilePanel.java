@@ -43,7 +43,7 @@ public class PrivateProfilePanel extends JPanel {
 		privateCheckbox.setSelected(storedIsPrivate);
 		privateCheckbox.addActionListener((event) -> {
 			new Thread(() -> {
-				privateCheckbox.setEnabled(false);
+				SwingUtilities.invokeLater(() -> privateCheckbox.setEnabled(false));
 
 				try {
 					JsonObject response = runeProfilePlugin.updateIsPrivate(privateCheckbox.isSelected());
@@ -58,7 +58,7 @@ public class PrivateProfilePanel extends JPanel {
 					privateCheckbox.setSelected(!privateCheckbox.isSelected());
 				}
 
-				privateCheckbox.setEnabled(true);
+				SwingUtilities.invokeLater(() -> privateCheckbox.setEnabled(true));
 			}).start();
 		});
 		add(privateCheckbox);

@@ -19,11 +19,11 @@ public class DeleteProfilePanel extends JPanel {
 		// Delete profile
 		JButton deleteProfileButton = new JButton("Delete Profile");
 		deleteProfileButton.addActionListener((event) -> {
-			deleteProfileButton.setEnabled(false);
+			SwingUtilities.invokeLater(() -> deleteProfileButton.setEnabled(false));
 
 			runeProfilePlugin.deleteProfile();
 
-			deleteProfileButton.setEnabled(true);
+			SwingUtilities.invokeLater(() -> deleteProfileButton.setEnabled(true));
 		});
 
 		add(deleteProfileButton);
