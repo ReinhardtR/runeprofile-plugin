@@ -176,3 +176,6 @@ You can add a description that will be displayed on your RuneProfile.
 4. Press the "Update Description"-button.
 
 Your description will now be displayed on your RuneProfile.
+
+## Compatibility
+Firefox doesn't support some of the features used on RuneProfile.com
