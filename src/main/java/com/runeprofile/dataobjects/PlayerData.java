@@ -1,6 +1,7 @@
 package com.runeprofile.dataobjects;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -171,8 +172,9 @@ public class PlayerData {
 
 	private JsonObject createCollectionLogJSON() {
 		CollectionLog collectionLog = RuneProfilePlugin.getCollectionLogManager().getCollectionLog();
-		String jsonString = RuneProfilePlugin.getGson().toJson(collectionLog);
-		return new JsonParser().parse(jsonString).getAsJsonObject();
+		Gson gson = RuneProfilePlugin.getGson();
+		String jsonString = gson.toJson(collectionLog);
+		return gson.fromJson(jsonString, JsonObject.class);
 	}
 
 	private JsonArray getAchievementDiariesJSON(Map<AchievementDiary, AchievementDiaryState> achievementDiaries) {
