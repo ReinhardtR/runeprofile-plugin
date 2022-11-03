@@ -284,16 +284,19 @@ public class RuneProfilePlugin extends Plugin {
 			throw new RuntimeException(e);
 		}
 
+		log.info("RESPONSE: " + response.get("isPrivate").getAsString());
+		log.info("RESPONSE: " + response.get("isPrivate").toString());
+
 		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
-						RuneProfileConfig.GENERATED_PATH,
-						response.get("isPrivate").getAsBoolean()
+						RuneProfileConfig.IS_PRIVATE,
+						response.get("isPrivate")
 		);
 
 		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
 						RuneProfileConfig.GENERATED_PATH,
-						response.get("generatedPath").getAsString()
+						response.get("generatedPath")
 		);
 
 		return response;
@@ -324,6 +327,12 @@ public class RuneProfilePlugin extends Plugin {
 		if (newDescription == null) {
 			throw new RuntimeException("Failed to update description");
 		}
+
+		configManager.setRSProfileConfiguration(
+						RuneProfileConfig.CONFIG_GROUP,
+						RuneProfileConfig.DESCRIPTION,
+						newDescription
+		);
 
 		return newDescription;
 	}

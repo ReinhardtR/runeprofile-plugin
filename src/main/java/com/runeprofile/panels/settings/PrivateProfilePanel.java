@@ -33,7 +33,10 @@ public class PrivateProfilePanel extends JPanel {
 		titleLabel.setForeground(Color.WHITE);
 		add(titleLabel);
 
-		boolean storedIsPrivate = Boolean.parseBoolean(RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.IS_PRIVATE));
+		String isPrivateString = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.IS_PRIVATE);
+		System.out.println("isPrivateString: " + isPrivateString);
+		boolean storedIsPrivate = Boolean.parseBoolean(isPrivateString);
+		System.out.println("storedIsPrivate: " + storedIsPrivate);
 
 		JCheckBox privateCheckbox = new JCheckBox("Private profile");
 		privateCheckbox.setToolTipText("Disables the public username URL and generates a hidden URL instead.");

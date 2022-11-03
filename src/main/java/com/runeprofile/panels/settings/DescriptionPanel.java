@@ -51,12 +51,6 @@ public class DescriptionPanel extends JPanel {
 				try {
 					String newDescription = runeProfilePlugin.updateDescription(descriptionEditor.getText());
 
-					RuneProfilePlugin.getConfigManager().setRSProfileConfiguration(
-									RuneProfileConfig.CONFIG_GROUP,
-									RuneProfileConfig.DESCRIPTION,
-									newDescription
-					);
-
 					// Sync the description with the server
 					descriptionEditor.setText(newDescription);
 				} catch (Exception e) {
