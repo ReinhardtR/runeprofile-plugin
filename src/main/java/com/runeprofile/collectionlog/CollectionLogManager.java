@@ -14,7 +14,6 @@ import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -54,7 +53,12 @@ public class CollectionLogManager {
 			return new CollectionLog();
 		}
 
-		return gson.fromJson(collectionLogString, CollectionLog.class);
+		try {
+			return gson.fromJson(collectionLogString, CollectionLog.class);
+		} catch (Exception e) {
+			log.error("Error parsing collection log", e);
+			return new CollectionLog();
+		}
 	}
 
 	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
