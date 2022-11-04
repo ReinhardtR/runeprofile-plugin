@@ -16,6 +16,7 @@ import net.runelite.client.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -76,7 +77,7 @@ public class CollectionLogManager {
 	}
 
 	private void updateCollectionLogPanel() {
-		String tabName = getTabTitle();
+		String tabName = getTabName();
 
 		if (tabName == null) {
 			return;
@@ -98,7 +99,13 @@ public class CollectionLogManager {
 			}
 		}
 
-		Set<String> storedInLog = collectionLog.getTab(tabName).keySet();
+		Map<String, CollectionLogEntry> storedTab = collectionLog.getTab(tabName);
+
+		if (storedTab == null) {
+			return;
+		}
+
+		Set<String> storedInLog = storedTab.keySet();
 
 		List<String> missingEntries = new ArrayList<>(entriesInTab);
 		missingEntries.removeAll(storedInLog);
@@ -114,7 +121,7 @@ public class CollectionLogManager {
 			return null;
 		}
 
-		CollectionLogTabs tab = CollectionLogTabs.getByName(getTabTitle());
+		CollectionLogTabs tab = CollectionLogTabs.getByName(getTabName());
 
 		if (tab == null) {
 			return null;
@@ -153,7 +160,9 @@ public class CollectionLogManager {
 		}
 
 		// Update collection log
-		collectionLog.getTab(getTabTitle()).put(getEntryName(), collectionLogEntry);
+		String tabTitle = getTabName();
+		String entryName = getEntryName();
+		collectionLog.getTab(tabTitle).put(entryName, collectionLogEntry);
 
 		int uniqueItemsObtained = client.getVarpValue(2943);
 		collectionLog.setUniqueItemsObtained(uniqueItemsObtained);
@@ -164,7 +173,7 @@ public class CollectionLogManager {
 		configManager.setRSProfileConfiguration(
 						RuneProfileConfig.CONFIG_GROUP,
 						RuneProfileConfig.COLLECTION_LOG,
-						collectionLog
+						gson.toJson(collectionLog)
 		);
 
 		log.info("Updated the Collection Log");
@@ -216,7 +225,7 @@ public class CollectionLogManager {
 		return children[0].getText();
 	}
 
-	private String getTabTitle() {
+	private String getTabName() {
 		for (CollectionLogTabs tab : CollectionLogTabs.values()) {
 			Widget tabWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getId());
 
