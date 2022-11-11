@@ -5,11 +5,11 @@ import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -22,7 +22,11 @@ public class PrivateProfilePanel extends JPanel {
 	private final JLabel urlLabel = new JLabel();
 
 	public PrivateProfilePanel(RuneProfilePlugin runeProfilePlugin) {
-		setLayout(new DynamicGridLayout(0, 1, 0, 4));
+		setLayout(new BorderLayout());
+
+		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 4));
+
+		Border buttonBorder = new EmptyBorder(8, 16, 8, 16);
 
 		String storedUrl = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.GENERATED_PATH);
 		privateUrl.set(storedUrl == null ? "None" : storedUrl);
@@ -31,7 +35,7 @@ public class PrivateProfilePanel extends JPanel {
 		JLabel titleLabel = new JLabel("Private Profile URL");
 		titleLabel.setFont(FontManager.getRunescapeBoldFont());
 		titleLabel.setForeground(Color.WHITE);
-		add(titleLabel);
+		wrapper.add(titleLabel);
 
 		String isPrivateString = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.IS_PRIVATE);
 		System.out.println("isPrivateString: " + isPrivateString);
@@ -61,7 +65,7 @@ public class PrivateProfilePanel extends JPanel {
 				SwingUtilities.invokeLater(() -> privateCheckbox.setEnabled(true));
 			}).start();
 		});
-		add(privateCheckbox);
+		wrapper.add(privateCheckbox);
 
 		JPanel urlContainer = new JPanel();
 		urlContainer.setLayout(new BorderLayout());
@@ -70,7 +74,7 @@ public class PrivateProfilePanel extends JPanel {
 
 		urlLabel.setFont(new Font("Courier New", Font.PLAIN, 11));
 		urlContainer.add(urlLabel);
-		add(urlContainer);
+		wrapper.add(urlContainer);
 
 		JButton copyButton = new JButton("Copy");
 		copyButton.addActionListener(e -> {
@@ -78,7 +82,8 @@ public class PrivateProfilePanel extends JPanel {
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 			clipboard.setContents(stringSelection, null);
 		});
-		add(copyButton);
+		copyButton.setBorder(buttonBorder);
+		wrapper.add(copyButton);
 
 		JButton newButton = new JButton("Generate New URL");
 		newButton.addActionListener((event) -> {
@@ -95,7 +100,10 @@ public class PrivateProfilePanel extends JPanel {
 				newButton.setEnabled(true);
 			}).start();
 		});
-		add(newButton);
+		newButton.setBorder(buttonBorder);
+		wrapper.add(newButton);
+
+		add(wrapper, BorderLayout.NORTH);
 	}
 
 	private void setNewURL(String path) {

@@ -1,20 +1,22 @@
 package com.runeprofile.panels.settings;
 
 import com.runeprofile.RuneProfilePlugin;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class DeleteProfilePanel extends JPanel {
 	public DeleteProfilePanel(RuneProfilePlugin runeProfilePlugin) {
-		setLayout(new DynamicGridLayout(0, 1, 0, 4));
+		setLayout(new BorderLayout());
+
+		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 0));
 
 		JLabel titleLabel = new JLabel("Delete Profile");
 		titleLabel.setFont(FontManager.getRunescapeBoldFont());
 		titleLabel.setForeground(Color.WHITE);
-		add(titleLabel);
+		wrapper.add(titleLabel);
 
 		// Delete profile
 		JButton deleteProfileButton = new JButton("Delete Profile");
@@ -25,7 +27,10 @@ public class DeleteProfilePanel extends JPanel {
 
 			SwingUtilities.invokeLater(() -> deleteProfileButton.setEnabled(true));
 		});
+		deleteProfileButton.setBorder(new EmptyBorder(8, 16, 8, 16));
 
-		add(deleteProfileButton);
+		wrapper.add(deleteProfileButton);
+
+		add(wrapper, BorderLayout.NORTH);
 	}
 }
