@@ -25,7 +25,6 @@ public class RuneProfileApiClient {
 	private OkHttpClient okHttpClient;
 
 	private HttpUrl.Builder getBaseUrl() {
-		log.info("DEV: " + isDevMode);
 		return isDevMode
 						? new HttpUrl.Builder().scheme("http").host("localhost").port(3000)
 						: new HttpUrl.Builder().scheme("https").host("www.runeprofile.com");

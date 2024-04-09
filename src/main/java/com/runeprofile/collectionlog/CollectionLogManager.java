@@ -55,8 +55,8 @@ public class CollectionLogManager {
 		try {
 			return gson.fromJson(collectionLogString, CollectionLog.class);
 		} catch (Exception e) {
-			log.error("Error parsing collection log. String: " + collectionLogString);
-			throw e;
+			log.error("Error parsing collection log", e);
+			return new CollectionLog();
 		}
 	}
 

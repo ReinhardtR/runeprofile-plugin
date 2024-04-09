@@ -105,13 +105,13 @@ Install the plugin from the RuneLite plugin hub.
 
 1. Login to your account if not already logged in.
 2. Open the RuneProfile panel from the right hand side. *(look for the RuneProfile logo)*
-3. Press the "Update Account"-button to send your account data to RuneProfile.com. *(runeprofile.com/u/{username})*
+3. Press the "Update Profile"-button to send your account data to RuneProfile.com. *(runeprofile.com/u/{username})*
 4. Your RuneProfile should now be available on the RuneProfile website. *(may take a minute to update)*
 
 ### Updating the Character Model
 
 To show your character model, put on your favorite outfit and press the "Update Model" button.
-> 📝 The "Update Account"-button will not update your model. This is intentional, so you can keep the same model when
+> 📝 The "Update Profile"-button will not update your model. This is intentional, so you can keep the same model when
 > updating your account.
 
 ### Updating the Profile (excl. model)
@@ -119,7 +119,7 @@ To show your character model, put on your favorite outfit and press the "Update 
 #### Manual updates
 
 1. Open the RuneProfile plugin panel.
-2. Press the "Update Account"-button to send your account data to RuneProfile.com.
+2. Press the "Update Profile"-button to send your account data to RuneProfile.com.
 
 #### Automatic updates on logout
 
@@ -144,12 +144,12 @@ Unfortunately, this requires a bit of manual work.
 
 1. Open the Collection Log.
 2. Open each tab and each entry to allow the plugin to read the data.
-3. Press the "Update Account"-button.
+3. Press the "Update Profile"-button.
 
 > 📝 The Plugin panel has a "Collection Log"-tab that will help you keep track of what entries you have opened.
 > Open a tab in the collection log to see what entries you have missed in that tab.
 
-When you've obtained a new item, open the entry (or entries) that contains the item and press the "Update Account"
+When you've obtained a new item, open the entry (or entries) that contains the item and press the "Update Profile"
 button. This will update the entry with the new item and track when you obtained the item.
 
 > 📝 Your RuneProfile will not accurately show when you obtained the items that were obtained before using the

@@ -5,11 +5,11 @@ import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -18,20 +18,24 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class PrivateProfilePanel extends JPanel {
-	private final AtomicReference<String> url = new AtomicReference<>();
+	private final AtomicReference<String> privateUrl = new AtomicReference<>();
 	private final JLabel urlLabel = new JLabel();
 
 	public PrivateProfilePanel(RuneProfilePlugin runeProfilePlugin) {
-		setLayout(new DynamicGridLayout(0, 1, 0, 4));
+		setLayout(new BorderLayout());
+
+		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 4));
+
+		Border buttonBorder = new EmptyBorder(8, 16, 8, 16);
 
 		String storedUrl = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.GENERATED_PATH);
-		url.set(storedUrl == null ? "None" : storedUrl);
-		urlLabel.setText(getHiddenURL(url.get()));
+		privateUrl.set(storedUrl == null ? "None" : storedUrl);
+		urlLabel.setText(getHiddenURL(privateUrl.get()));
 
 		JLabel titleLabel = new JLabel("Private Profile URL");
 		titleLabel.setFont(FontManager.getRunescapeBoldFont());
 		titleLabel.setForeground(Color.WHITE);
-		add(titleLabel);
+		wrapper.add(titleLabel);
 
 		String isPrivateString = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.IS_PRIVATE);
 		System.out.println("isPrivateString: " + isPrivateString);
@@ -52,8 +56,8 @@ public class PrivateProfilePanel extends JPanel {
 					privateCheckbox.setSelected(response.get("isPrivate").getAsBoolean());
 
 					// Sync url with possibly new generated path
-					String newURL = "runeprofile.com/u/" + response.get("generatedPath").getAsString();
-					setNewURL(newURL);
+					String path = response.get("generatedPath").getAsString();
+					setNewURL(path);
 				} catch (Exception e) {
 					privateCheckbox.setSelected(!privateCheckbox.isSelected());
 				}
@@ -61,7 +65,7 @@ public class PrivateProfilePanel extends JPanel {
 				SwingUtilities.invokeLater(() -> privateCheckbox.setEnabled(true));
 			}).start();
 		});
-		add(privateCheckbox);
+		wrapper.add(privateCheckbox);
 
 		JPanel urlContainer = new JPanel();
 		urlContainer.setLayout(new BorderLayout());
@@ -70,15 +74,16 @@ public class PrivateProfilePanel extends JPanel {
 
 		urlLabel.setFont(new Font("Courier New", Font.PLAIN, 11));
 		urlContainer.add(urlLabel);
-		add(urlContainer);
+		wrapper.add(urlContainer);
 
 		JButton copyButton = new JButton("Copy");
 		copyButton.addActionListener(e -> {
-			StringSelection stringSelection = new StringSelection(url.get());
+			StringSelection stringSelection = new StringSelection(privateUrl.get());
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 			clipboard.setContents(stringSelection, null);
 		});
-		add(copyButton);
+		copyButton.setBorder(buttonBorder);
+		wrapper.add(copyButton);
 
 		JButton newButton = new JButton("Generate New URL");
 		newButton.addActionListener((event) -> {
@@ -86,8 +91,8 @@ public class PrivateProfilePanel extends JPanel {
 				newButton.setEnabled(false);
 
 				try {
-					String newURL = "runeprofile.com/u/" + runeProfilePlugin.updateGeneratedPath();
-					setNewURL(newURL);
+					String path = runeProfilePlugin.updateGeneratedPath();
+					setNewURL(path);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -95,14 +100,17 @@ public class PrivateProfilePanel extends JPanel {
 				newButton.setEnabled(true);
 			}).start();
 		});
-		add(newButton);
+		newButton.setBorder(buttonBorder);
+		wrapper.add(newButton);
+
+		add(wrapper, BorderLayout.NORTH);
 	}
 
-	private void setNewURL(String newUrl) {
-		if (!newUrl.equals(url.get())) {
-			url.set(newUrl);
-			SwingUtilities.invokeLater(() -> urlLabel.setText(getHiddenURL(url.get())));
-		}
+	private void setNewURL(String path) {
+		String newUrl = path.equals("None") ? path : "runeprofile.com/" + path;
+
+		privateUrl.set(newUrl);
+		SwingUtilities.invokeLater(() -> urlLabel.setText(getHiddenURL(privateUrl.get())));
 	}
 
 	private String getHiddenURL(String url) {
@@ -110,16 +118,17 @@ public class PrivateProfilePanel extends JPanel {
 
 		try {
 			int charactersToShow = 4;
-			// only include the first 4 characters of the path
+
 			String[] path = url.split("/");
 
-			String generatedPath = path[2];
+			String generatedPath = path[1];
 			String firstCharacters = generatedPath.substring(0, charactersToShow);
 			String stars = StringUtils.repeat("*", generatedPath.length() - charactersToShow);
 			String fullProfilePath = firstCharacters + stars;
 
-			return path[0] + "/" + path[1] + "/" + fullProfilePath;
+			return path[0] + "/" + fullProfilePath;
 		} catch (Exception e) {
+			log.error("Error getting hidden URL", e);
 			return "None";
 		}
 	}
