@@ -7,13 +7,12 @@ import net.runelite.client.hiscore.HiscoreEndpoint;
 
 @RequiredArgsConstructor
 public enum Leaderboards {
-	NORMAL(AccountType.NORMAL, HiscoreEndpoint.NORMAL),
-	IRONMAN(AccountType.IRONMAN, HiscoreEndpoint.IRONMAN),
-	HARDCORE(AccountType.HARDCORE_IRONMAN, HiscoreEndpoint.HARDCORE_IRONMAN),
-	ULTIMATE(AccountType.ULTIMATE_IRONMAN, HiscoreEndpoint.ULTIMATE_IRONMAN);
-
-	@Getter
-	private final AccountType accountType;
+	NORMAL(HiscoreEndpoint.NORMAL),
+	IRONMAN(HiscoreEndpoint.IRONMAN),
+	HARDCORE(HiscoreEndpoint.HARDCORE_IRONMAN),
+	ULTIMATE(HiscoreEndpoint.ULTIMATE_IRONMAN),
+	LEVEL_3_SKILLER(HiscoreEndpoint.LEVEL_3_SKILLER),
+	PURE(HiscoreEndpoint.PURE);
 
 	@Getter
 	private final HiscoreEndpoint endpoint;

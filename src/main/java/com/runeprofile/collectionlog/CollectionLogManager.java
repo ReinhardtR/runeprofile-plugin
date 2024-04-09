@@ -8,9 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 
@@ -66,7 +64,7 @@ public class CollectionLogManager {
 		if (scriptPostFired.getScriptId() == ScriptID.COLLECTION_DRAW_LIST) {
 			log.info("COLLECTION DRAW LIST FIRED");
 
-			if (RuneProfilePlugin.getClient().getWidget(WidgetInfo.ADVENTURE_LOG) != null) {
+			if (RuneProfilePlugin.getClient().getWidget(InterfaceID.ADVENTURE_LOG) != null) {
 				log.info("Adventure Log isn't supported");
 				return;
 			}
@@ -99,7 +97,7 @@ public class CollectionLogManager {
 			}
 		}
 
-		Map<String, CollectionLogEntry> storedTab = collectionLog.getTab(tabName);
+		Map<String, CollectionLogPage> storedTab = collectionLog.getTab(tabName);
 
 		if (storedTab == null) {
 			return;
@@ -127,7 +125,7 @@ public class CollectionLogManager {
 			return null;
 		}
 
-		Widget entryList = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getEntryListId());
+		Widget entryList = client.getWidget(InterfaceID.COLLECTION_LOG, tab.getEntryListId());
 
 		if (entryList == null) {
 			return null;
@@ -136,7 +134,7 @@ public class CollectionLogManager {
 		return entryList.getDynamicChildren();
 	}
 
-	public CollectionLogEntry getEntry() {
+	public CollectionLogPage getEntry() {
 		String name = getEntryName();
 
 		if (name == null) {
@@ -147,14 +145,14 @@ public class CollectionLogManager {
 		CollectionLogItem[] items = getItems().toArray(new CollectionLogItem[0]);
 		CollectionLogKillCount[] killCounts = getKillCounts().toArray(new CollectionLogKillCount[0]);
 
-		return new CollectionLogEntry(index, items, killCounts.length > 0 ? killCounts : null);
+		return new CollectionLogPage(index, items, killCounts.length > 0 ? killCounts : null);
 	}
 
 	public void updateCollectionLog() {
 		// Get entry
-		CollectionLogEntry collectionLogEntry = getEntry();
+		CollectionLogPage collectionLogPage = getEntry();
 
-		if (collectionLogEntry == null) {
+		if (collectionLogPage == null) {
 			log.error("Failed to get entry");
 			return;
 		}
@@ -162,7 +160,7 @@ public class CollectionLogManager {
 		// Update collection log
 		String tabTitle = getTabName();
 		String entryName = getEntryName();
-		collectionLog.getTab(tabTitle).put(entryName, collectionLogEntry);
+		collectionLog.getTab(tabTitle).put(entryName, collectionLogPage);
 
 		int uniqueItemsObtained = client.getVarpValue(2943);
 		collectionLog.setUniqueItemsObtained(uniqueItemsObtained);
@@ -180,7 +178,7 @@ public class CollectionLogManager {
 	}
 
 	private Widget getEntryHead() {
-		return client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_HEADER);
+		return client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_HEADER);
 	}
 
 	private int getEntryIndex() {
@@ -227,7 +225,7 @@ public class CollectionLogManager {
 
 	private String getTabName() {
 		for (CollectionLogTabs tab : CollectionLogTabs.values()) {
-			Widget tabWidget = client.getWidget(WidgetID.COLLECTION_LOG_ID, tab.getId());
+			Widget tabWidget = client.getWidget(InterfaceID.COLLECTION_LOG, tab.getId());
 
 			if (tabWidget == null) {
 				continue;
@@ -255,7 +253,7 @@ public class CollectionLogManager {
 	private List<CollectionLogItem> getItems() {
 		List<CollectionLogItem> items = new ArrayList<>();
 
-		Widget itemsContainer = client.getWidget(WidgetInfo.COLLECTION_LOG_ENTRY_ITEMS);
+		Widget itemsContainer = client.getWidget(ComponentID.COLLECTION_LOG_ENTRY_ITEMS);
 
 		if (itemsContainer == null) {
 			return items;

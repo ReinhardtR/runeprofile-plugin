@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import javax.annotation.Nullable;
 
 @RequiredArgsConstructor
-public class CollectionLogEntry {
+public class CollectionLogPage {
 	private final int index;
 
 	private final CollectionLogItem[] items;

@@ -130,7 +130,6 @@ public class RuneProfilePlugin extends Plugin {
 
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged state) {
-
 		log.info("Game state changed: {}", state.getGameState());
 		if (state.getGameState() == GameState.LOGGED_IN) {
 			if (!isValidWorldType(client.getWorldType())) {
@@ -393,10 +392,11 @@ public class RuneProfilePlugin extends Plugin {
 
 	private boolean isValidWorldType(EnumSet<WorldType> worldTypes) {
 		return ImmutableList.of(
-						WorldType.DEADMAN,
-						WorldType.NOSAVE_MODE,
-						WorldType.SEASONAL,
-						WorldType.TOURNAMENT_WORLD
-		).stream().noneMatch(worldTypes::contains);
+						WorldType.MEMBERS,
+						WorldType.PVP,
+						WorldType.SKILL_TOTAL,
+						WorldType.HIGH_RISK,
+						WorldType.LAST_MAN_STANDING
+		).stream().anyMatch(worldTypes::contains);
 	}
 }
