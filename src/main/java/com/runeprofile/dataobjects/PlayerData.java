@@ -268,7 +268,7 @@ public class PlayerData {
 				entry.add("skills", skills);
 				entry.add("activities", activities);
 				entry.add("bosses", bosses);
-				hiscores.add(leaderboard.getName(), entry);
+				hiscores.add(leaderboard.getGameMode(), entry);
 
 				continue;
 			}
@@ -306,7 +306,7 @@ public class PlayerData {
 			entry.add("skills", skills);
 			entry.add("activities", activities);
 			entry.add("bosses", bosses);
-			hiscores.add(leaderboard.name().toLowerCase(), entry);
+			hiscores.add(leaderboard.getGameMode(), entry);
 		}
 
 		return hiscores;

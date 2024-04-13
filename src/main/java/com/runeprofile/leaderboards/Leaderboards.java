@@ -15,7 +15,7 @@ public enum Leaderboards {
 	SKILLER("LEVEL_3_SKILLER", HiscoreEndpoint.LEVEL_3_SKILLER);
 
 	@Getter
-	private final String name;
+	private final String gameMode;
 
 	@Getter
 	private final HiscoreEndpoint endpoint;
