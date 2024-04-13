@@ -44,7 +44,7 @@ public class RuneProfileApiClient {
 		Request request = new Request.Builder()
 						.url(url)
 						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite Plugin v1.0.4")
+						.header("User-Agent", "RuneLite Plugin v1.0.5")
 						.put(body)
 						.build();
 
