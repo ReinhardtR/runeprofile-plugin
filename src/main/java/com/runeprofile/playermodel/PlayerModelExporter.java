@@ -36,15 +36,15 @@ public class PlayerModelExporter {
 			int vi2 = model.getFaceIndices2()[fi];
 			int vi3 = model.getFaceIndices3()[fi];
 
-			int vx1 = model.getVerticesX()[vi1];
-			int vx2 = model.getVerticesX()[vi2];
-			int vx3 = model.getVerticesX()[vi3];
-			int vy1 = -model.getVerticesY()[vi1];
-			int vy2 = -model.getVerticesY()[vi2];
-			int vy3 = -model.getVerticesY()[vi3];
-			int vz1 = model.getVerticesZ()[vi1];
-			int vz2 = model.getVerticesZ()[vi2];
-			int vz3 = model.getVerticesZ()[vi3];
+			float vx1 = model.getVerticesX()[vi1];
+			float vx2 = model.getVerticesX()[vi2];
+			float vx3 = model.getVerticesX()[vi3];
+			float vy1 = -model.getVerticesY()[vi1];
+			float vy2 = -model.getVerticesY()[vi2];
+			float vy3 = -model.getVerticesY()[vi3];
+			float vz1 = model.getVerticesZ()[vi1];
+			float vz2 = model.getVerticesZ()[vi2];
+			float vz3 = model.getVerticesZ()[vi3];
 
 			vertices.add(new Vertex(vx1, vy1, vz1, vc1.getRed(), vc1.getGreen(), vc1.getBlue()));
 			vertices.add(new Vertex(vx2, vy2, vz2, vc2.getRed(), vc2.getGreen(), vc2.getBlue()));
@@ -99,11 +99,15 @@ public class PlayerModelExporter {
 		return b;
 	}
 
+	private static byte[] le(float n) {
+		return le((int) n);
+	}
+
 	private static class Vertex {
-		public int x, y, z;
+		public float x, y, z;
 		public int r, g, b;
 
-		public Vertex(int x, int y, int z, int r, int g, int b) {
+		public Vertex(float x, float y, float z, int r, int g, int b) {
 			this.x = x;
 			this.y = y;
 			this.z = z;
