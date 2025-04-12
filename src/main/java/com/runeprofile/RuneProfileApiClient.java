@@ -1,233 +1,168 @@
 package com.runeprofile;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.runeprofile.dataobjects.PlayerData;
-import com.runeprofile.dataobjects.PlayerModelData;
+import com.runeprofile.data.CollectionLogPage;
+import com.runeprofile.data.PlayerData;
+import com.runeprofile.data.PlayerModelData;
 import com.runeprofile.utils.DateHeader;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.RuneLiteProperties;
 import okhttp3.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 @Slf4j
 @RequiredArgsConstructor
 public class RuneProfileApiClient {
-	private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
+    private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
-	private final boolean isDevMode = false;
+    @Inject
+    private OkHttpClient okHttpClient;
 
-	@Inject
-	private OkHttpClient okHttpClient;
+    private final String userAgent;
 
-	private HttpUrl.Builder getBaseUrl() {
-		return isDevMode
-						? new HttpUrl.Builder().scheme("http").host("localhost").port(3000)
-						: new HttpUrl.Builder().scheme("https").host("www.runeprofile.com");
-	}
+    // increment when making breaking changes to how the plugin users the API
+    private static final String version = "2.0.0";
 
-	public String updateProfile(PlayerData playerData) {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.build();
+    private final HttpUrl baseUrl;
 
-		// Build Request Body
-		RequestBody body = RequestBody.create(JSON_MEDIA_TYPE, playerData.getJson().toString());
+    @Inject
+    private Gson gson;
 
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite Plugin v1.0.5")
-						.put(body)
-						.build();
+    @Inject
+    public RuneProfileApiClient() {
+        boolean isDevMode = false;
 
-		OkHttpClient extendedTimeoutClient = okHttpClient.newBuilder()
-						.readTimeout(30, TimeUnit.SECONDS)
-						.build();
+        String runeliteVersion = RuneLiteProperties.getVersion();
+        userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;
 
-		// Request Call
-		try (Response response = extendedTimeoutClient.newCall(request).execute()) {
-			if (!response.isSuccessful()) {
-				return "Failed";
-			}
+        //noinspection ConstantValue
+        baseUrl = isDevMode
+                ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
+                : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
+    }
 
-			String date = response.header("Date");
-			response.close();
-			return DateHeader.getDateString(date);
-		} catch (IOException e) {
-			log.error("Request call to RuneProfile API failed.");
-		}
+    private HttpUrl buildApiUrl(String... pathSegments) {
+        HttpUrl.Builder urlBuilder = baseUrl.newBuilder();
+        for (String segment : pathSegments) {
+            urlBuilder.addPathSegment(segment);
+        }
+        return urlBuilder.build();
+    }
 
-		return "Failed";
-	}
+    private RequestBody createJsonBody(JsonObject jsonObject) {
+        return RequestBody.create(JSON_MEDIA_TYPE, jsonObject.toString());
+    }
 
-	public String updateModel(PlayerModelData playerModelData) {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.addPathSegment("model")
-						.build();
+    private Request.Builder buildApiRequest(HttpUrl url, Consumer<Request.Builder> methodSetter) {
+        Request.Builder builder = new Request.Builder()
+                .url(url)
+                .header("Content-Type", "application/json")
+                .header("User-Agent", userAgent);
+        methodSetter.accept(builder);
+        return builder;
+    }
 
-		// Build Request Body
-		RequestBody body = RequestBody.create(JSON_MEDIA_TYPE, playerModelData.getJson().toString());
+    private CompletableFuture<Response> executeHttpRequestAsync(OkHttpClient client, Request request) {
+        CompletableFuture<Response> future = new CompletableFuture<>();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                log.error("Async API request failed.", e);
+                future.completeExceptionally(e);
+            }
 
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite")
-						.put(body)
-						.build();
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                future.complete(response);
+            }
+        });
+        return future;
+    }
 
-		// Request Call
-		try (Response response = okHttpClient.newCall(request).execute()) {
-			if (!response.isSuccessful()) {
-				return "Failed";
-			}
+    public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, String data) {
+        RequestBody body = RequestBody.create(JSON_MEDIA_TYPE, data);
+        Request request = buildApiRequest(url, builder -> builder.post(body)).build();
+        log.info("Sending json request to = {}, data = {}", url.toString(), data);
+        return executeHttpRequestAsync(okHttpClient, request);
+    }
 
-			String date = response.header("Date");
-			response.close();
+    public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, MultipartBody data) {
+        Request request = buildApiRequest(url, builder -> builder.post(data)).build();
+        log.info("Sending form data request to = {}, data = {}", url.toString(), data);
+        return executeHttpRequestAsync(okHttpClient, request);
+    }
 
-			return DateHeader.getDateString(date);
-		} catch (IOException e) {
-			log.error("Request call to RuneProfile API failed.");
-		}
+    public CompletableFuture<Response> getHttpRequestAsync(HttpUrl url) {
+        Request request = buildApiRequest(url, Request.Builder::get)
+                .build();
+        return executeHttpRequestAsync(okHttpClient, request);
+    }
 
-		return "Failed";
-	}
+    public CompletableFuture<Response> deleteHttpRequestAsync(HttpUrl url) {
+        Request request = buildApiRequest(url, Request.Builder::delete)
+                .build();
+        return executeHttpRequestAsync(okHttpClient, request);
+    }
 
-	public String updateGeneratedPath(String accountHash) throws Exception {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.addPathSegment("generated-path")
-						.build();
+    public CompletableFuture<String> updateProfileAsync(PlayerData data) {
+        HttpUrl url = buildApiUrl("profiles");
+        return postHttpRequestAsync(url, gson.toJson(data)).thenApplyAsync(this::getResponseDateString);
+    }
 
-		JsonObject jsonRequestBody = new JsonObject();
-		jsonRequestBody.addProperty("accountHash", accountHash);
-		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, jsonRequestBody.toString());
+    public CompletableFuture<String> updateModelAsync(PlayerModelData data) {
+        HttpUrl url = buildApiUrl("profiles", "models");
 
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite")
-						.put(requestBody)
-						.build();
+        RequestBody file = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
+        MultipartBody body = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("accountId", data.getAccountHash())
+                .addFormDataPart("model", "model.ply", file)
+                .build();
 
-		// Request Call
-		try (Response response = okHttpClient.newCall(request).execute()) {
-			JsonObject responseBody = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
-			response.close();
+        return postHttpRequestAsync(url, body).thenApplyAsync(this::getResponseDateString);
+    }
 
-			return responseBody.get("generatedPath").getAsString();
-		} catch (IOException e) {
-			throw new Exception("Request call to RuneProfile API failed.");
-		}
-	}
+    public CompletableFuture<CollectionLogPage> getCollectionLogPage(String username, String page) {
+        HttpUrl url = buildApiUrl("profiles", username, "collection-log", page);
 
-	public String updateDescription(String accountHash, String description) throws Exception {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.addPathSegment("description")
-						.build();
+        return getHttpRequestAsync(url).thenApplyAsync((response -> {
+            if (response.isSuccessful()) {
+                try (Response res = response) {
+                    ResponseBody body = res.body();
+                    if (body == null) {
+                        log.warn("Async API request failed with code: {}", response.code());
+                        return null;
+                    }
+                    return gson.fromJson(body.string(), CollectionLogPage.class);
+                } catch (IOException e) {
+                    log.warn("Async API request failed with code: {}", response.code());
+                    log.error("Error reading response body", e);
+                    return null;
+                }
+            } else {
+                log.warn("Async API request failed with code: {}", response.code());
+                return null;
+            }
+        }));
+    }
 
-		JsonObject jsonRequestBody = new JsonObject();
-		jsonRequestBody.addProperty("accountHash", accountHash);
-		jsonRequestBody.addProperty("description", description);
-		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, jsonRequestBody.toString());
-
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite")
-						.put(requestBody)
-						.build();
-
-		// Request Call
-		try (Response response = okHttpClient.newCall(request).execute()) {
-			JsonObject responseBody = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
-			response.close();
-
-			return responseBody.get("description").getAsString();
-		} catch (IOException e) {
-			throw new Exception("Request call to RuneProfile API failed.");
-		}
-	}
-
-	public JsonObject updateIsPrivate(String accountHash, boolean isPrivate) throws Exception {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.addPathSegment("private")
-						.build();
-
-		JsonObject jsonBody = new JsonObject();
-		jsonBody.addProperty("accountHash", accountHash);
-		jsonBody.addProperty("isPrivate", isPrivate);
-
-		// Build Request Body
-		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, jsonBody.toString());
-
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite")
-						.put(requestBody)
-						.build();
-
-		// Request Call
-		try (Response response = okHttpClient.newCall(request).execute()) {
-			JsonObject responseBody = new JsonParser().parse(Objects.requireNonNull(response.body()).string()).getAsJsonObject();
-			response.close();
-
-			log.info("Body: " + responseBody);
-
-			return responseBody;
-		} catch (IOException e) {
-			throw new Exception("Request call to RuneProfile API failed.");
-		}
-	}
-
-	public void deleteProfile(String accountHash) {
-		// Build URL
-		HttpUrl url = getBaseUrl()
-						.addPathSegment("api")
-						.addPathSegment("profile")
-						.build();
-
-		JsonObject requestBodyJson = new JsonObject();
-		requestBodyJson.addProperty("accountHash", accountHash);
-		RequestBody requestBody = RequestBody.create(JSON_MEDIA_TYPE, requestBodyJson.toString());
-
-		// Build Request
-		Request request = new Request.Builder()
-						.url(url)
-						.header("Content-Type", "application/json")
-						.header("User-Agent", "RuneLite")
-						.delete(requestBody)
-						.build();
-
-		// Request Call
-		try {
-			Response response = okHttpClient.newCall(request).execute();
-			response.close();
-		} catch (IOException e) {
-			log.error("Request call to RuneProfile API failed.");
-		}
-	}
+    public String getResponseDateString(Response response) {
+        try (Response res = response) {
+            if (response.isSuccessful()) {
+                String date = res.header("Date");
+                return DateHeader.getDateString(date);
+            } else {
+                log.warn("Async API request failed with code: {}", response.code());
+                return "Failed";
+            }
+        }
+    }
 }

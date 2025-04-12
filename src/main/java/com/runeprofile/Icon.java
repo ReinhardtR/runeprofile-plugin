@@ -33,26 +33,23 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 
 public enum Icon {
-	LOGO("/logo.png"),
+    LOGO("/logo.png"),
 
-	WEB("/web.png"),
-	DISCORD("/discord.png"),
-	GITHUB("/github.png"),
-	HOME("/home.png"),
-	COLLECTION_LOG("/collection_log.png"),
-	SETTINGS("/settings.png");
+    WEB("/web.png"),
+    DISCORD("/discord.png"),
+    GITHUB("/github.png");
 
-	private final String file;
+    private final String file;
 
-	Icon(String file) {
-		this.file = file;
-	}
+    Icon(String file) {
+        this.file = file;
+    }
 
-	public BufferedImage getImage() {
-		return ImageUtil.loadImageResource(RuneProfilePlugin.class, file);
-	}
+    public BufferedImage getImage() {
+        return ImageUtil.loadImageResource(RuneProfilePlugin.class, file);
+    }
 
-	public ImageIcon getIcon(int width, int height) {
-		return new ImageIcon(ImageUtil.resizeImage(getImage(), width, height));
-	}
+    public ImageIcon getIcon(int width, int height) {
+        return new ImageIcon(ImageUtil.resizeImage(getImage(), width, height));
+    }
 }

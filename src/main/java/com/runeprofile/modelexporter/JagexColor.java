@@ -22,14 +22,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.runeprofile.playermodel;
-
+package com.runeprofile.modelexporter;
 
 import java.awt.*;
 
 // Originally from RuneLite cache
 // Additions made for calculating average of 3 colors
-public final class JagexColor {
+public final class JagexColor
+{
 	public static final double BRIGHTNESS_MAX = .6;
 	public static final double BRIGHTNESS_HIGH = .7;
 	public static final double BRIGHTNESS_LOW = .8;
@@ -38,20 +38,22 @@ public final class JagexColor {
 	private static final double HUE_OFFSET = (.5 / 64.D);
 	private static final double SATURATION_OFFSET = (.5 / 8.D);
 
-	private JagexColor() {
+	private JagexColor()
+	{
 	}
 
 	// take 3 Jagex HSL colors and make a single RGB color to represent them
-	public static Color HSLtoRGBAvg(int hsl1, int hsl2, int hsl3) {
+	public static Color HSLtoRGBAvg(int hsl1, int hsl2, int hsl3)
+	{
 		Color c1 = new Color(HSLtoRGB((short) hsl1, BRIGHTNESS_MIN));
 		Color c2 = new Color(HSLtoRGB((short) hsl2, BRIGHTNESS_MIN));
 		Color c3 = new Color(HSLtoRGB((short) hsl3, BRIGHTNESS_MIN));
 
 		// compute color average using squares
 		// uses squared approach from https://sighack.com/post/averaging-rgb-colors-the-right-way
-		int r = c1.getRed() * c1.getRed() + c2.getRed() * c2.getRed() + c3.getRed() * c3.getRed();
-		int g = c1.getGreen() * c1.getGreen() + c2.getGreen() * c2.getGreen() + c3.getGreen() * c3.getGreen();
-		int b = c1.getBlue() * c1.getBlue() + c2.getBlue() * c2.getBlue() + c3.getBlue() * c3.getBlue();
+		int r = c1.getRed()*c1.getRed() + c2.getRed()*c2.getRed() + c3.getRed()*c3.getRed();
+		int g = c1.getGreen()*c1.getGreen() + c2.getGreen()*c2.getGreen() + c3.getGreen()*c3.getGreen();
+		int b = c1.getBlue()*c1.getBlue() + c2.getBlue()*c2.getBlue() + c3.getBlue()*c3.getBlue();
 
 		r = (int) Math.round(Math.sqrt((double) r / 3.0d));
 		g = (int) Math.round(Math.sqrt((double) g / 3.0d));
@@ -60,29 +62,35 @@ public final class JagexColor {
 		return new Color(r, g, b);
 	}
 
-	public static short packHSL(int hue, int saturation, int luminance) {
+	public static short packHSL(int hue, int saturation, int luminance)
+	{
 		return (short) ((short) (hue & 63) << 10
-						| (short) (saturation & 7) << 7
-						| (short) (luminance & 127));
+				| (short) (saturation & 7) << 7
+				| (short) (luminance & 127));
 	}
 
-	public static int unpackHue(short hsl) {
+	public static int unpackHue(short hsl)
+	{
 		return hsl >> 10 & 63;
 	}
 
-	public static int unpackSaturation(short hsl) {
+	public static int unpackSaturation(short hsl)
+	{
 		return hsl >> 7 & 7;
 	}
 
-	public static int unpackLuminance(short hsl) {
+	public static int unpackLuminance(short hsl)
+	{
 		return hsl & 127;
 	}
 
-	public static String formatHSL(short hsl) {
+	public static String formatHSL(short hsl)
+	{
 		return String.format("%02Xh%Xs%02Xl", unpackHue(hsl), unpackSaturation(hsl), unpackLuminance(hsl));
 	}
 
-	public static int HSLtoRGB(short hsl, double brightness) {
+	public static int HSLtoRGB(short hsl, double brightness)
+	{
 		double hue = (double) unpackHue(hsl) / 64.D + HUE_OFFSET;
 		double saturation = (double) unpackSaturation(hsl) / 8.D + SATURATION_OFFSET;
 		double luminance = (double) unpackLuminance(hsl) / 128.D;
@@ -94,7 +102,8 @@ public final class JagexColor {
 		double lightness = luminance - (chroma / 2);
 
 		double r = lightness, g = lightness, b = lightness;
-		switch ((int) (hue * 6.D)) {
+		switch ((int) (hue * 6.D))
+		{
 			case 0:
 				r += chroma;
 				g += x;
@@ -122,18 +131,20 @@ public final class JagexColor {
 		}
 
 		int rgb = ((int) (r * 256.0D) << 16)
-						| ((int) (g * 256.0D) << 8)
-						| (int) (b * 256.0D);
+				| ((int) (g * 256.0D) << 8)
+				| (int) (b * 256.0D);
 
 		rgb = adjustForBrightness(rgb, brightness);
 
-		if (rgb == 0) {
+		if (rgb == 0)
+		{
 			rgb = 1;
 		}
 		return rgb;
 	}
 
-	public static int adjustForBrightness(int rgb, double brightness) {
+	public static int adjustForBrightness(int rgb, double brightness)
+	{
 		double r = (double) (rgb >> 16) / 256.0D;
 		double g = (double) (rgb >> 8 & 255) / 256.0D;
 		double b = (double) (rgb & 255) / 256.0D;
@@ -143,7 +154,17 @@ public final class JagexColor {
 		b = Math.pow(b, brightness);
 
 		return ((int) (r * 256.0D) << 16)
-						| ((int) (g * 256.0D) << 8)
-						| (int) (b * 256.0D);
+				| ((int) (g * 256.0D) << 8)
+				| (int) (b * 256.0D);
+	}
+
+	public static int[] createPalette(double brightness)
+	{
+		int[] colorPalette = new int[65536];
+		for (int i = 0; i < colorPalette.length; i++)
+		{
+			colorPalette[i] = HSLtoRGB((short) i, brightness);
+		}
+		return colorPalette;
 	}
 }

@@ -4,85 +4,110 @@ import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.FontManager;
+import net.runelite.client.util.LinkBrowser;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class HomePanel extends JPanel {
-	public HomePanel(RuneProfilePlugin runeProfilePlugin) {
-		setLayout(new BorderLayout());
 
-		JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 6));
+    private final Border buttonBorder;
 
-		Border buttonBorder = new EmptyBorder(8, 16, 8, 16);
+    public HomePanel(RuneProfilePlugin plugin) {
+        buttonBorder = new EmptyBorder(8, 16, 8, 16);
 
-		// Update account label
-		String updatedAccountDate = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.ACCOUNT_UPDATE_DATE);
-		JLabel updatedAccountLabel = new JLabel((updatedAccountDate != null) ? "Last update: " + updatedAccountDate : "Last update: Never");
-		updatedAccountLabel.setFont(FontManager.getRunescapeSmallFont());
+        setLayout(new BorderLayout());
+        JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 6));
 
-		wrapper.add(updatedAccountLabel);
+        // Update Model
+        JLabel updatedModelLabel = createUpdateLabel(RuneProfileConfig.MODEL_UPDATE_DATE);
+        JButton updateModelButton = createUpdateButton(
+                "Update Model",
+                updatedModelLabel,
+                plugin::updateModelAsync
+        );
 
-		// Update profile button
-		JButton updateProfileButton = new JButton("Update Profile");
-		updateProfileButton.setBorder(buttonBorder);
-		updateProfileButton.addActionListener((event) -> {
-			new Thread(() -> {
-				SwingUtilities.invokeLater(() -> updateProfileButton.setEnabled(false));
+        wrapper.add(updatedModelLabel);
+        wrapper.add(updateModelButton);
 
-				String lastUpdated = "Failed";
 
-				try {
-					lastUpdated = runeProfilePlugin.updateProfile();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+        // Open Profile
+        JButton openProfileButton = new JButton("Open Profile");
+        openProfileButton.setBorder(buttonBorder);
+        openProfileButton.addActionListener(e -> {
+            String username = RuneProfilePlugin.getClient().getLocalPlayer().getName();
+            LinkBrowser.browse("https://runeprofile.com/" + username);
+        });
 
-				String finalLastUpdated = lastUpdated;
-				SwingUtilities.invokeLater(() -> {
-					updatedAccountLabel.setText("Last update: " + finalLastUpdated);
-					updateProfileButton.setEnabled(true);
-				});
-			}).start();
-		});
+        wrapper.add(openProfileButton);
 
-		wrapper.add(updateProfileButton);
+        if (plugin.isDeveloperMode()) {
+            // DEV ONLY - generate hiscores icons
+            JButton generateHiscoreIcons = new JButton("DEV: Hiscores Icons");
+            generateHiscoreIcons.setBorder(buttonBorder);
+            generateHiscoreIcons.addActionListener(e -> {
+                plugin.DEV_generateHiscoreIconsJson();
+            });
+            wrapper.add(generateHiscoreIcons);
+        }
 
-		// Update model label
-		String updatedModelDate = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, RuneProfileConfig.MODEL_UPDATE_DATE);
-		JLabel updatedModelLabel = new JLabel((updatedModelDate != null) ? "Last update: " + updatedModelDate : "Last update: Never");
-		updatedModelLabel.setFont(FontManager.getRunescapeSmallFont());
+        add(wrapper, BorderLayout.NORTH);
+    }
 
-		wrapper.add(updatedModelLabel);
+    private JLabel createUpdateLabel(String configKey) {
+        String lastUpdatedDate = RuneProfilePlugin.getConfigManager().getRSProfileConfiguration(RuneProfileConfig.CONFIG_GROUP, configKey);
+        JLabel label = new JLabel((lastUpdatedDate != null) ? "Last update: " + lastUpdatedDate : "Last update: Never");
+        label.setFont(FontManager.getRunescapeSmallFont());
+        return label;
+    }
 
-		// Update model button
-		JButton updateModelButton = new JButton("Update Model");
-		updateModelButton.setBorder(buttonBorder);
-		updateModelButton.addActionListener((event) -> {
-			new Thread(() -> {
-				SwingUtilities.invokeLater(() -> updateModelButton.setEnabled(false));
+    private JButton createUpdateButton(String buttonText, JLabel statusLabel, SupplierWithException<CompletableFuture<String>, Exception> updateAction) {
+        JButton button = new JButton(buttonText);
+        button.setBorder(buttonBorder);
+        button.addActionListener((event) -> {
+            button.setEnabled(false);
+            statusLabel.setText("Last update: Updating...");
+            new SwingWorker<String, Void>() {
+                @Override
+                protected String doInBackground() throws Exception {
+                    try {
+                        return updateAction.get().get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return "Update interrupted";
+                    } catch (IOException e) {
+                        log.debug(Arrays.toString(e.getStackTrace()));
+                        log.error("Failed to update: {}", e.toString());
+                        return "Failed to update";
+                    }
+                }
 
-				String lastUpdated = "Failed";
+                @Override
+                protected void done() {
+                    try {
+                        String lastUpdated = get();
+                        statusLabel.setText("Last update: " + lastUpdated);
+                    } catch (Exception e) {
+                        log.debug(Arrays.toString(e.getStackTrace()));
+                        log.error("Failed to update: {}", e.toString());
+                        statusLabel.setText("Last update: Failed");
+                    } finally {
+                        button.setEnabled(true);
+                    }
+                }
+            }.execute();
+        });
+        return button;
+    }
+}
 
-				try {
-					lastUpdated = runeProfilePlugin.updateModel();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				String finalLastUpdated = lastUpdated;
-				SwingUtilities.invokeLater(() -> {
-					updatedModelLabel.setText("Last update: " + finalLastUpdated);
-					updateModelButton.setEnabled(true);
-				});
-			}).start();
-		});
-
-		wrapper.add(updateModelButton);
-
-		add(wrapper, BorderLayout.NORTH);
-	}
+@FunctionalInterface
+interface SupplierWithException<T, E extends Exception> {
+    T get() throws E;
 }

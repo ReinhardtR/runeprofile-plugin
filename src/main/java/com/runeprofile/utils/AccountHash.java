@@ -8,25 +8,25 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
 public class AccountHash {
-	public static String getHashed(Client client) {
-		long accountHashLong = client.getAccountHash();
+    public static String getHashed(Client client) {
+        long accountHashLong = client.getAccountHash();
 
-		if (accountHashLong == -1) {
-			return null;
-		}
+        if (accountHashLong == -1) {
+            return null;
+        }
 
-		String accountHashString = String.valueOf(accountHashLong);
+        String accountHashString = String.valueOf(accountHashLong);
 
-		MessageDigest digest = null;
+        MessageDigest digest;
 
-		try {
-			digest = MessageDigest.getInstance("SHA-1");
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		}
+        try {
+            digest = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
 
-		byte[] hash = digest.digest(accountHashString.getBytes(StandardCharsets.UTF_8));
+        byte[] hash = digest.digest(accountHashString.getBytes(StandardCharsets.UTF_8));
 
-		return Base64.getEncoder().encodeToString(hash);
-	}
+        return Base64.getEncoder().encodeToString(hash);
+    }
 }
