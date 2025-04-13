@@ -207,7 +207,7 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     private void executeLogCommand(ChatMessage chatMessage, String message) {
-        log.info("Executing log command: {}", message);
+        log.debug("Executing log command: {}", message);
         Matcher commandMatcher = COLLECTION_LOG_COMMAND_PATTERN.matcher(message);
         if (!commandMatcher.matches()) {
             log.debug("Invalid command format");
@@ -343,7 +343,6 @@ public class RuneProfilePlugin extends Plugin {
             for (CombatAchievementTier tier : CombatAchievementTier.values()) {
                 int id = tier.getId();
                 int completedCount = tier.getCompletedCount(client);
-                log.info("Combat Achievement Tier: {}, Completed: {}", id, completedCount);
                 playerData.getCombatAchievementTiers().put(id, completedCount);
             }
 
@@ -353,7 +352,6 @@ public class RuneProfilePlugin extends Plugin {
                 int[] completedCounts = diary.getTiersCompletedCount(client);
                 for (int tierIndex = 0; tierIndex < completedCounts.length; tierIndex++) {
                     int completedCount = completedCounts[tierIndex];
-                    log.info("Achievement Diary: {}, Tier: {}, Completed: {}", areaId, tierIndex, completedCount);
                     playerData.getAchievementDiaryTiers().add(new AchievementDiaryTierData(areaId, tierIndex, completedCount));
                 }
             }
@@ -456,7 +454,7 @@ public class RuneProfilePlugin extends Plugin {
                 final BufferedImage sprite = spriteManager.getSprite(spriteId, 0);
 
                 if (sprite == null) {
-                    log.info("Failed to load icon for = {}", key);
+                    log.debug("Failed to load icon for = {}", key);
                     continue;
                 }
 
@@ -466,7 +464,7 @@ public class RuneProfilePlugin extends Plugin {
                     String base64Image = Base64.getEncoder().encodeToString(imageBytes);
                     icons.put(key, base64Image);
                 } catch (IOException e) {
-                    log.info("Failed to encode icon for = {}", key);
+                    log.debug("Failed to encode icon for = {}", key);
                 }
             }
 
@@ -474,9 +472,9 @@ public class RuneProfilePlugin extends Plugin {
             File outputFile = new File(outputFileName);
             try (FileWriter writer = new FileWriter(outputFile)) {
                 gson.toJson(icons, writer); // Serialize the map to JSON and write to the file
-                log.info("Successfully generated hiscore icons in file = {}", outputFileName);
+                log.debug("Successfully generated hiscore icons in file = {}", outputFileName);
             } catch (IOException e) {
-                log.info("Failed to write hiscore icons file");
+                log.debug("Failed to write hiscore icons file");
             }
         });
     }

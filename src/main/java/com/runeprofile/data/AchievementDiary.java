@@ -29,8 +29,6 @@ public enum AchievementDiary {
         client.runScript(2200, id);
         int[] stack = client.getIntStack();
 
-        log.info("Int stack: {}", stack);
-
         int easy = stack[0];
         int medium = stack[3];
         int hard = stack[6];

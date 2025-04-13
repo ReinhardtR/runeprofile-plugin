@@ -46,7 +46,7 @@ public class RuneProfileApiClient {
         //noinspection ConstantValue
         baseUrl = isDevMode
                 ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
-                : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
+                : new HttpUrl.Builder().scheme("https").host("runeprofile-api.reinhardt.workers.dev").build();
     }
 
     private HttpUrl buildApiUrl(String... pathSegments) {
@@ -90,13 +90,13 @@ public class RuneProfileApiClient {
     public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, String data) {
         RequestBody body = RequestBody.create(JSON_MEDIA_TYPE, data);
         Request request = buildApiRequest(url, builder -> builder.post(body)).build();
-        log.info("Sending json request to = {}, data = {}", url.toString(), data);
+        log.debug("Sending json request to = {}, data = {}", url.toString(), data);
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
     public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, MultipartBody data) {
         Request request = buildApiRequest(url, builder -> builder.post(data)).build();
-        log.info("Sending form data request to = {}, data = {}", url.toString(), data);
+        log.debug("Sending form data request to = {}, data = {}", url.toString(), data);
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
