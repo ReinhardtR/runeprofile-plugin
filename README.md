@@ -32,5 +32,5 @@ The plugin is needed to upload your in-game data to RuneProfile, which will be d
 You can read more about how to use RuneProfile here: [runeprofile.com/info/guide](https://runeprofile.com).
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/19b9e71c0135a06566e88b6d8ad96c0b86883c03/src/main/assets/profile-showcase.png" >
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-showcase.png" >
 </p>
