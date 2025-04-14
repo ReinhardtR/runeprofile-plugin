@@ -281,32 +281,39 @@ public class RuneProfilePlugin extends Plugin {
     public CompletableFuture<String> updateModelAsync() throws IllegalStateException {
         isValidRequest();
 
-        String accountHash = AccountHash.getHashed(client);
+        CompletableFuture<PlayerModelData> dataFuture = new CompletableFuture<>();
 
-        return getPlayerModelAsync().thenApplyAsync((model) -> {
+        clientThread.invokeLater(() -> {
+            String accountHash = AccountHash.getHashed(client);
+
+            Player player = client.getLocalPlayer();
+            Model model = player.getModel();
+
+            byte[] modelBytes = null;
             try {
-                return PlayerModelExporter.export(model);
+                modelBytes = PlayerModelExporter.export(model);
             } catch (IOException e) {
-                log.error("Failed to export model: {}", e.toString());
-                throw new RuntimeException(e);
-            }
-        }).thenCompose((modelBytes) -> {
-            PlayerModelData data = new PlayerModelData(accountHash, modelBytes);
-            return runeProfileApiClient.updateModelAsync(data);
-        }).handle((dateString, ex) -> {
-            if (ex != null) {
-                log.error("Error updating model", ex);
-                throw new RuntimeException(ex);
+                dataFuture.completeExceptionally(e);
             }
 
-            configManager.setRSProfileConfiguration(
-                    RuneProfileConfig.CONFIG_GROUP,
-                    RuneProfileConfig.MODEL_UPDATE_DATE,
-                    dateString
-            );
-
-            return dateString;
+            dataFuture.complete(new PlayerModelData(accountHash, modelBytes));
         });
+
+        return dataFuture.thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
+                .handle((dateString, ex) -> {
+                    if (ex != null) {
+                        log.error("Error updating model", ex);
+                        throw new RuntimeException(ex);
+                    }
+
+                    configManager.setRSProfileConfiguration(
+                            RuneProfileConfig.CONFIG_GROUP,
+                            RuneProfileConfig.MODEL_UPDATE_DATE,
+                            dateString
+                    );
+
+                    return dateString;
+                }));
     }
 
     private CompletableFuture<PlayerData> getPlayerDataAsync() {
@@ -362,20 +369,6 @@ public class RuneProfilePlugin extends Plugin {
             playerDataFuture.complete(playerData);
         });
         return playerDataFuture;
-    }
-
-    private CompletableFuture<Model> getPlayerModelAsync() {
-        CompletableFuture<Model> modelFuture = new CompletableFuture<>();
-        clientThread.invokeLater(() -> {
-            Model model = client.getLocalPlayer().getModel();
-            if (model == null) {
-                log.warn("Local player model is null");
-                modelFuture.complete(null);
-            } else {
-                modelFuture.complete(model);
-            }
-        });
-        return modelFuture;
     }
 
     private void isValidRequest() throws IllegalStateException {
