@@ -134,6 +134,9 @@ public class RuneProfilePlugin extends Plugin {
 
         syncButtonManager.startUp();
         chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
+
+        GameState state = client.getGameState();
+        updatePanelState(state);
     }
 
     @Override
@@ -147,6 +150,8 @@ public class RuneProfilePlugin extends Plugin {
     private void onGameStateChanged(GameStateChanged gameStateChanged) {
         GameState state = gameStateChanged.getGameState();
 
+        updatePanelState(state);
+
         // clear player state
         switch (state) {
             case HOPPING:
@@ -157,23 +162,10 @@ public class RuneProfilePlugin extends Plugin {
         }
 
         if (state == GameState.LOGIN_SCREEN) {
-            // cant use panel when logged out
-            runeProfilePanel.loadInvalidState();
-
             // update on logout
             if (config.updateOnLogout() && client.getLocalPlayer() != null) {
                 new Thread(this::updateProfileAsync).start();
             }
-        }
-
-        if (state == GameState.LOGGED_IN) {
-            // cant use panel on invalid profiles
-            if (!isValidProfileType()) {
-                runeProfilePanel.loadInvalidRequestState();
-                return;
-            }
-
-            runeProfilePanel.loadValidState();
         }
     }
 
@@ -204,6 +196,18 @@ public class RuneProfilePlugin extends Plugin {
     @Subscribe
     public void onScriptPostFired(ScriptPostFired postFired) {
         syncButtonManager.onScriptPostFired(postFired);
+    }
+
+    private void updatePanelState(GameState state) {
+        if (state == GameState.LOGGED_IN) {
+            if (!isValidProfileType()) {
+                runeProfilePanel.loadInvalidRequestState();
+            } else {
+                runeProfilePanel.loadValidState();
+            }
+        } else {
+            runeProfilePanel.loadInvalidState();
+        }
     }
 
     private void executeLogCommand(ChatMessage chatMessage, String message) {
