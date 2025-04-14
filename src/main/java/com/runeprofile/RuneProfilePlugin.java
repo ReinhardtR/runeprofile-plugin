@@ -35,7 +35,6 @@ import net.runelite.client.chat.ChatCommandManager;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
