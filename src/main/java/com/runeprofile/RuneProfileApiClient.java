@@ -46,7 +46,7 @@ public class RuneProfileApiClient {
         //noinspection ConstantValue
         baseUrl = isDevMode
                 ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
-                : new HttpUrl.Builder().scheme("https").host("runeprofile-api.reinhardt.workers.dev").build();
+                : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
     }
 
     private HttpUrl buildApiUrl(String... pathSegments) {
