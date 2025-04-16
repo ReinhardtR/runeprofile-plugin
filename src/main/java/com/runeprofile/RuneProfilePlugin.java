@@ -31,6 +31,7 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.chat.ChatCommandManager;
+import net.runelite.client.util.Text;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
@@ -223,9 +224,11 @@ public class RuneProfilePlugin extends Plugin {
             return;
         }
 
-        String username = client.getLocalPlayer().getName();
+        String senderName = chatMessage.getType().equals(ChatMessageType.PRIVATECHATOUT)
+                ? client.getLocalPlayer().getName()
+                : Text.sanitize(chatMessage.getName());
 
-        runeProfileApiClient.getCollectionLogPage(username, pageName).thenAccept((page) -> {
+        runeProfileApiClient.getCollectionLogPage(senderName, pageName).thenAccept((page) -> {
             clientThread.invokeLater(() -> {
                 if (page == null) {
                     updateChatMessage(chatMessage, "Failed to load collection log page");
