@@ -29,7 +29,7 @@ RuneProfile tries to display all of your important achievements in a familiar UI
 
 The plugin is needed to upload your in-game data to RuneProfile, which will be displayed on the RuneProfile.com website.
 
-You can read more about how to use RuneProfile here: [runeprofile.com/info/guide](https://runeprofile.com).
+You can read more about how to use RuneProfile here: [runeprofile.com/info/guide](https://runeprofile.com/info/guide).
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-example.png" >
