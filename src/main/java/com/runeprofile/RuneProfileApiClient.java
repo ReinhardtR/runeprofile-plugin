@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.RuneLiteProperties;
 import okhttp3.*;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Objects;
@@ -120,12 +121,21 @@ public class RuneProfileApiClient {
     public CompletableFuture<String> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 
-        RequestBody file = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
-        MultipartBody body = new MultipartBody.Builder()
+        RequestBody modelFile = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
+
+        MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("accountId", data.getAccountHash())
-                .addFormDataPart("model", "model.ply", file)
-                .build();
+                .addFormDataPart("model", "model.ply", modelFile);
+
+        @Nullable
+        byte[] petModel = data.getPetModel();
+        if (petModel != null) {
+            RequestBody petFile = RequestBody.create(MediaType.parse("model/ply"), petModel);
+            bodyBuilder.addFormDataPart("petModel", "pet.ply", petFile);
+        }
+
+        MultipartBody body = bodyBuilder.build();
 
         return postHttpRequestAsync(url, body).thenApplyAsync(this::getResponseDateString);
     }

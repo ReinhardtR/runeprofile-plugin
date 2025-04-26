@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.runeprofile.data.*;
-import com.runeprofile.modelexporter.PlayerModelExporter;
+import com.runeprofile.modelexporter.ModelExporter;
 import com.runeprofile.ui.SyncButtonManager;
 import com.runeprofile.utils.AccountHash;
 import lombok.Getter;
@@ -127,23 +127,25 @@ public class RuneProfilePlugin extends Plugin {
                 .tooltip("RuneProfile")
                 .icon(toolbarIcon)
                 .panel(runeProfilePanel)
-                .priority(3)
+                .priority(4)
                 .build();
 
         clientToolbar.addNavigation(navigationButton);
 
-        syncButtonManager.startUp();
         chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
 
         GameState state = client.getGameState();
         updatePanelState(state);
+
+        syncButtonManager.startUp();
     }
 
     @Override
     protected void shutDown() {
         clientToolbar.removeNavigation(navigationButton);
-        syncButtonManager.shutDown();
         chatCommandManager.unregisterCommand(COLLECTION_LOG_COMMAND);
+
+        syncButtonManager.shutDown();
     }
 
     @Subscribe
@@ -297,12 +299,24 @@ public class RuneProfilePlugin extends Plugin {
 
             byte[] modelBytes = null;
             try {
-                modelBytes = PlayerModelExporter.export(model);
+                modelBytes = ModelExporter.toBytes(model);
             } catch (IOException e) {
                 dataFuture.completeExceptionally(e);
             }
 
-            dataFuture.complete(new PlayerModelData(accountHash, modelBytes));
+            NPC pet = client.getFollower();
+            Model petModel = pet != null ? pet.getModel() : null;
+
+            byte[] petModelBytes = null;
+            if (petModel != null) {
+                try {
+                    petModelBytes = ModelExporter.toBytes(petModel);
+                } catch (IOException e) {
+                    dataFuture.completeExceptionally(e);
+                }
+            }
+
+            dataFuture.complete(new PlayerModelData(accountHash, modelBytes, petModelBytes));
         });
 
         return dataFuture.thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
