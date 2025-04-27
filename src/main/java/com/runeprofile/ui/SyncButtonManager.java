@@ -34,8 +34,11 @@ import net.runelite.api.annotations.Component;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.widgets.*;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.plugins.PluginManager;
 
 import static java.lang.Math.round;
 
@@ -69,23 +72,26 @@ public class SyncButtonManager {
     private static final int FONT_COLOUR_INACTIVE = 0xd6d6d6;
     private static final int FONT_COLOUR_ACTIVE = 0xffffff;
     private static final int CLOSE_BUTTON_OFFSET = 28;
-    private static final int BUTTON_WIDTH = 95;
+    private static final int BUTTON_WIDTH = 80;
     private static final int BUTTON_OFFSET = CLOSE_BUTTON_OFFSET + 5;
     private int lastAttemptedUpdate = -1;
 
     private final Client client;
     private final ClientThread clientThread;
     private final EventBus eventBus;
+    private final ConfigManager configManager;
 
     @Inject
     private SyncButtonManager(
             Client client,
             ClientThread clientThread,
-            EventBus eventBus
+            EventBus eventBus,
+            ConfigManager configManager
     ) {
         this.client = client;
         this.clientThread = clientThread;
         this.eventBus = eventBus;
+        this.configManager = configManager;
     }
 
     public void startUp() {
@@ -123,10 +129,8 @@ public class SyncButtonManager {
     @Subscribe
     public void onScriptPostFired(ScriptPostFired scriptPostFired) {
         if (scriptPostFired.getScriptId() == COLLECTION_LOG_SETUP) {
-            clientThread.invokeLater(() -> {
-                removeButton();
-                addButton(Screen.COLLECTION_LOG, this::onButtonClick);
-            });
+            removeButton();
+            addButton(Screen.COLLECTION_LOG, this::onButtonClick);
         }
     }
 
@@ -160,7 +164,7 @@ public class SyncButtonManager {
         final int y = searchButton.getOriginalY();
         final int cornerDim = 9;
 
-        final Widget[] spriteWidgets = new Widget[10];
+        final Widget[] spriteWidgets = new Widget[9];
 
         spriteWidgets[0] = parent.createChild(-1, WidgetType.GRAPHIC)
                 .setSpriteId(SPRITE_IDS_INACTIVE[0])
@@ -204,7 +208,7 @@ public class SyncButtonManager {
                 .setPos(x, y + cornerDim);
 
         // Top and bottom edges
-        int topWidth = 77;
+        int topWidth = BUTTON_WIDTH - 2 * cornerDim;
         int topHeight = 9;
         spriteWidgets[6] = parent.createChild(-1, WidgetType.GRAPHIC)
                 .setSpriteId(SPRITE_IDS_INACTIVE[6])
@@ -216,16 +220,7 @@ public class SyncButtonManager {
                 .setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
                 .setSize(topWidth, topHeight)
                 .setPos(x + cornerDim, y + h - topHeight);
-        // Refresh icon
-        spriteWidgets[9] = parent.createChild(-1, WidgetType.GRAPHIC)
-                .setSpriteId(SpriteID.CHATBOX_TRANSPARENT_SCROLLBAR_ARROW_UP)
-                .setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
-                .setSize(13, 16)
-                .setOpacity(80)
-                .setPos(x + 10, y + 3);
-
-
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 9; i++) {
             spriteWidgets[i].revalidate();
         }
 
@@ -235,9 +230,9 @@ public class SyncButtonManager {
                 .setFontId(FontID.PLAIN_11)
                 .setTextShadowed(true)
                 .setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
-                .setXTextAlignment(WidgetTextAlignment.LEFT)
+                .setXTextAlignment(WidgetTextAlignment.CENTER)
                 .setYTextAlignment(WidgetTextAlignment.CENTER)
-                .setPos(x - 10, y + 1)
+                .setPos(x, y)
                 .setSize(w, h)
                 .setYPositionMode(searchButton.getYPositionMode());
         text.revalidate();
@@ -263,9 +258,12 @@ public class SyncButtonManager {
         text.setAction(0, "Update your RuneProfile");
         text.setOnOpListener((JavaScriptCallback) ev -> onClick.run());
 
-
-        // Shrink the top bar to avoid overlapping the new button
-        draggableTopbar.setOriginalWidth(draggableTopbar.getOriginalWidth() - (w + (x - CLOSE_BUTTON_OFFSET)));
+        boolean isWikiSyncPluginEnabled = Boolean.parseBoolean(configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, "wikisyncplugin"));
+        log.info("WikiSync plugin enabled: {}", isWikiSyncPluginEnabled);
+        if (!isWikiSyncPluginEnabled) {
+            // Shrink the top bar to avoid overlapping the new button
+            draggableTopbar.setOriginalWidth(draggableTopbar.getOriginalWidth() - (w + (x - CLOSE_BUTTON_OFFSET)));
+        }
         draggableTopbar.revalidate();
 
         // recompute locations / sizes on parent
