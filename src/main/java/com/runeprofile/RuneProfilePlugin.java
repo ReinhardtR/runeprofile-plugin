@@ -1,23 +1,27 @@
 package com.runeprofile;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.runeprofile.data.*;
 import com.runeprofile.modelexporter.ModelExporter;
 import com.runeprofile.ui.SyncButtonManager;
 import com.runeprofile.utils.AccountHash;
+import com.runeprofile.utils.RuneProfileApiException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneScapeProfileType;
@@ -25,19 +29,20 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.hiscore.HiscoreSkill;
+import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.chat.ChatCommandManager;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,6 +55,7 @@ import java.util.stream.Collectors;
         tags = {"runeprofile", "rune", "profile", "collection"}
 )
 public class RuneProfilePlugin extends Plugin {
+    public static final String CONFIG_GROUP = "runeprofile";
     private static RuneProfilePlugin instance;
 
     @Inject
@@ -80,6 +86,9 @@ public class RuneProfilePlugin extends Plugin {
     private ChatCommandManager chatCommandManager;
 
     @Inject
+    private MenuManager menuManager;
+
+    @Inject
     private Gson gson;
 
     @Inject
@@ -96,6 +105,11 @@ public class RuneProfilePlugin extends Plugin {
     @Inject
     private SyncButtonManager syncButtonManager;
 
+    // menu option
+    private static final String RUNEPROFILE_MENU_OPTION = "Open RuneProfile";
+    private static final String KICK_OPTION = "Kick";
+    private static final ImmutableList<String> AFTER_OPTIONS = ImmutableList.of("Message", "Add ignore", "Remove friend", "Delete", KICK_OPTION);
+
     // collection log
     private final Map<Integer, Integer> playerItems = new HashMap<>();
     private int tickCollectionLogScriptFired = -1;
@@ -107,10 +121,6 @@ public class RuneProfilePlugin extends Plugin {
         return instance.client;
     }
 
-    public static ConfigManager getConfigManager() {
-        return instance.configManager;
-    }
-
     @Provides
     RuneProfileConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(RuneProfileConfig.class);
@@ -120,7 +130,7 @@ public class RuneProfilePlugin extends Plugin {
     protected void startUp() {
         instance = this;
 
-        this.runeProfilePanel = new RuneProfilePanel(this);
+        this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         final BufferedImage toolbarIcon = Icon.LOGO.getImage();
 
         navigationButton = NavigationButton.builder()
@@ -147,6 +157,7 @@ public class RuneProfilePlugin extends Plugin {
 
         syncButtonManager.shutDown();
     }
+
 
     @Subscribe
     private void onGameStateChanged(GameStateChanged gameStateChanged) {
@@ -212,6 +223,46 @@ public class RuneProfilePlugin extends Plugin {
         }
     }
 
+    @Subscribe
+    public void onMenuEntryAdded(MenuEntryAdded event) {
+        if (!config.menuLookupOption()) return;
+
+        int groupId = WidgetUtil.componentToInterface(event.getActionParam1());
+        String option = event.getOption();
+
+        if (!AFTER_OPTIONS.contains(option)
+                // prevent duplicate menu options in friends list
+                || (option.equals("Delete") && groupId != InterfaceID.IGNORE)) {
+            return;
+        }
+
+        boolean addMenuLookup = (groupId == InterfaceID.FRIENDS
+                || groupId == InterfaceID.CHATCHANNEL_CURRENT
+                || groupId == InterfaceID.CLANS_SIDEPANEL
+                || groupId == InterfaceID.CLANS_GUEST_SIDEPANEL
+                // prevent from adding for Kick option (interferes with the raiding party one)
+                || groupId == InterfaceID.CHATBOX && !KICK_OPTION.equals(option)
+                || groupId == InterfaceID.RAIDS_SIDEPANEL
+                || groupId == InterfaceID.PM_CHAT
+                || groupId == InterfaceID.IGNORE);
+
+        if (addMenuLookup) {
+            String username = Text.toJagexName(Text.removeTags(event.getTarget()));
+
+            client.getMenu().createMenuEntry(-2)
+                    .setTarget(event.getTarget())
+                    .setOption("RuneProfile")
+                    .setType(MenuAction.RUNELITE)
+                    .setIdentifier(event.getIdentifier())
+                    .onClick(e -> openProfileInBrowser(username));
+        }
+    }
+
+    public void openProfileInBrowser(String username) {
+        String url = "https://www.runeprofile.com/" + username.replace(" ", "%20");
+        LinkBrowser.browse(url);
+    }
+
     private void executeLogCommand(ChatMessage chatMessage, String message) {
         log.debug("Executing log command: {}", message);
         Matcher commandMatcher = COLLECTION_LOG_COMMAND_PATTERN.matcher(message);
@@ -230,10 +281,12 @@ public class RuneProfilePlugin extends Plugin {
                 ? client.getLocalPlayer().getName()
                 : Text.sanitize(chatMessage.getName());
 
-        runeProfileApiClient.getCollectionLogPage(senderName, pageName).thenAccept((page) -> {
+        runeProfileApiClient.getCollectionLogPage(senderName, pageName).whenComplete((page, ex) -> {
             clientThread.invokeLater(() -> {
-                if (page == null) {
-                    updateChatMessage(chatMessage, "Failed to load collection log page");
+                if (ex != null) {
+                    log.info("Instance of RuneProfileApiException: {}", ex.getClass());
+                    final String errorMessage = getApiErrorMessage(ex, "Failed to load collection log page.");
+                    updateChatMessage(chatMessage, errorMessage);
                     return;
                 }
 
@@ -268,25 +321,26 @@ public class RuneProfilePlugin extends Plugin {
         isValidRequest();
 
         getPlayerDataAsync().thenCompose((data) -> runeProfileApiClient.updateProfileAsync(data))
-                .handle((dateString, ex) -> {
+                .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating profile", ex);
+
+                        final String errorMessage = getApiErrorMessage(ex, "Failed to update your profile.");
+
                         clientThread.invokeLater(() -> {
-                            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Failed to update your profile.", "RuneProfile");
+                            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", errorMessage, "RuneProfile");
                         });
 
-                        throw new RuntimeException(ex);
+                        throw new RuneProfileApiException(errorMessage);
                     }
 
                     clientThread.invokeLater(() -> {
                         client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your profile has been updated!", "RuneProfile");
                     });
-
-                    return dateString;
                 });
     }
 
-    public CompletableFuture<String> updateModelAsync() throws IllegalStateException {
+    public CompletableFuture<String> updateModelAsync() {
         isValidRequest();
 
         CompletableFuture<PlayerModelData> dataFuture = new CompletableFuture<>();
@@ -320,14 +374,17 @@ public class RuneProfilePlugin extends Plugin {
         });
 
         return dataFuture.thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
-                .handle((dateString, ex) -> {
+                .handle((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating model", ex);
-                        throw new RuntimeException(ex);
+                        throw new RuntimeException(ex.getMessage());
                     }
 
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+                    final String dateString = sdf.format(new Date());
+
                     configManager.setRSProfileConfiguration(
-                            RuneProfileConfig.CONFIG_GROUP,
+                            CONFIG_GROUP,
                             RuneProfileConfig.MODEL_UPDATE_DATE,
                             dateString
                     );
@@ -451,6 +508,13 @@ public class RuneProfilePlugin extends Plugin {
         }
 
         client.setModIcons(newModIcons);
+    }
+
+    private String getApiErrorMessage(Throwable ex, String defaultMessage) {
+        Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
+        return cause instanceof RuneProfileApiException
+                ? cause.getMessage()
+                : defaultMessage;
     }
 
     public void DEV_generateHiscoreIconsJson() {

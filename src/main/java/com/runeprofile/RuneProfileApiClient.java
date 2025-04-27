@@ -5,7 +5,8 @@ import com.google.gson.JsonObject;
 import com.runeprofile.data.CollectionLogPage;
 import com.runeprofile.data.PlayerData;
 import com.runeprofile.data.PlayerModelData;
-import com.runeprofile.utils.DateHeader;
+import com.runeprofile.data.ProfileSearchResult;
+import com.runeprofile.utils.RuneProfileApiException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,37 +89,63 @@ public class RuneProfileApiClient {
         return future;
     }
 
-    public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, String data) {
+    private CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, String data) {
         RequestBody body = RequestBody.create(JSON_MEDIA_TYPE, data);
         Request request = buildApiRequest(url, builder -> builder.post(body)).build();
         log.debug("Sending json request to = {}, data = {}", url.toString(), data);
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
-    public CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, MultipartBody data) {
+    private CompletableFuture<Response> postHttpRequestAsync(HttpUrl url, MultipartBody data) {
         Request request = buildApiRequest(url, builder -> builder.post(data)).build();
         log.debug("Sending form data request to = {}, data = {}", url.toString(), data);
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
-    public CompletableFuture<Response> getHttpRequestAsync(HttpUrl url) {
+    private CompletableFuture<Response> getHttpRequestAsync(HttpUrl url) {
         Request request = buildApiRequest(url, Request.Builder::get)
                 .build();
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
-    public CompletableFuture<Response> deleteHttpRequestAsync(HttpUrl url) {
+    private CompletableFuture<Response> deleteHttpRequestAsync(HttpUrl url) {
         Request request = buildApiRequest(url, Request.Builder::delete)
                 .build();
         return executeHttpRequestAsync(okHttpClient, request);
     }
 
-    public CompletableFuture<String> updateProfileAsync(PlayerData data) {
-        HttpUrl url = buildApiUrl("profiles");
-        return postHttpRequestAsync(url, gson.toJson(data)).thenApplyAsync(this::getResponseDateString);
+    private <T> T handleResponse(Response response, @Nullable Class<T> clazz) {
+        try (Response res = response) {
+            ResponseBody body = res.body();
+
+            if (body == null) {
+                throw new RuneProfileApiException("Response body is null");
+            }
+
+            String bodyString = body.string();
+
+            if (!response.isSuccessful()) {
+                JsonObject json = gson.fromJson(bodyString, JsonObject.class);
+                throw new RuneProfileApiException(json.get("message").getAsString());
+            }
+
+            if (clazz == null) {
+                return null;
+            }
+
+            return gson.fromJson(bodyString, clazz);
+        } catch (IOException e) {
+            throw new RuneProfileApiException("Error reading response body");
+        }
     }
 
-    public CompletableFuture<String> updateModelAsync(PlayerModelData data) {
+    public CompletableFuture<Void> updateProfileAsync(PlayerData data) {
+        HttpUrl url = buildApiUrl("profiles");
+        return postHttpRequestAsync(url, gson.toJson(data))
+                .thenApply((response) -> handleResponse(response, null));
+    }
+
+    public CompletableFuture<Void> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 
         RequestBody modelFile = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
@@ -137,42 +164,22 @@ public class RuneProfileApiClient {
 
         MultipartBody body = bodyBuilder.build();
 
-        return postHttpRequestAsync(url, body).thenApplyAsync(this::getResponseDateString);
+        return postHttpRequestAsync(url, body)
+                .thenApplyAsync((response -> handleResponse(response, null)));
     }
 
     public CompletableFuture<CollectionLogPage> getCollectionLogPage(String username, String page) {
         HttpUrl url = buildApiUrl("profiles", username, "collection-log", page);
-
-        return getHttpRequestAsync(url).thenApplyAsync((response -> {
-            if (response.isSuccessful()) {
-                try (Response res = response) {
-                    ResponseBody body = res.body();
-                    if (body == null) {
-                        log.warn("Async API request failed with code: {}", response.code());
-                        return null;
-                    }
-                    return gson.fromJson(body.string(), CollectionLogPage.class);
-                } catch (IOException e) {
-                    log.warn("Async API request failed with code: {}", response.code());
-                    log.error("Error reading response body", e);
-                    return null;
-                }
-            } else {
-                log.warn("Async API request failed with code: {}", response.code());
-                return null;
-            }
-        }));
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response -> handleResponse(response, CollectionLogPage.class)));
     }
 
-    public String getResponseDateString(Response response) {
-        try (Response res = response) {
-            if (response.isSuccessful()) {
-                String date = res.header("Date");
-                return DateHeader.getDateString(date);
-            } else {
-                log.warn("Async API request failed with code: {}", response.code());
-                return "Failed";
-            }
-        }
+    public CompletableFuture<ProfileSearchResult[]> searchProfiles(String query) {
+        HttpUrl url = buildApiUrl("profiles")
+                .newBuilder()
+                .addQueryParameter("q", query)
+                .build();
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response -> handleResponse(response, ProfileSearchResult[].class)));
     }
 }

@@ -1,78 +1,73 @@
 package com.runeprofile;
 
 import com.runeprofile.panels.InvalidPanel;
-import com.runeprofile.panels.MainPanel;
-import com.runeprofile.panels.misc.HeaderPanel;
-import lombok.Getter;
+import com.runeprofile.panels.LayoutPluginPanel;
+import com.runeprofile.panels.HeaderPanel;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.ui.PluginPanel;
 
+import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
 
 @Slf4j
-public class RuneProfilePanel extends PluginPanel {
-	private final RuneProfilePlugin runeProfilePlugin;
+public class RuneProfilePanel extends net.runelite.client.ui.PluginPanel {
+    private final LayoutPluginPanel layoutPluginPanel;
+    private InvalidPanel invalidPanel;
 
-	@Getter
-	private MainPanel mainPanel;
-	private InvalidPanel invalidPanel;
+    @Inject
+    public RuneProfilePanel(HeaderPanel headerPanel, LayoutPluginPanel layoutPluginPanel) {
+        super(false);
+        setLayout(new BorderLayout());
 
-	public RuneProfilePanel(RuneProfilePlugin runeProfilePlugin) {
-		super(false);
-		setLayout(new BorderLayout());
+        this.layoutPluginPanel = layoutPluginPanel;
 
-		this.runeProfilePlugin = runeProfilePlugin;
+        add(headerPanel, BorderLayout.NORTH);
+        loadInvalidState();
+    }
 
-		add(new HeaderPanel(), BorderLayout.NORTH);
-		loadInvalidState();
-	}
+    public void loadValidState() {
+        SwingUtilities.invokeLater(() -> {
+            if (invalidPanel != null) {
+                remove(invalidPanel);
+            }
 
-	public void loadValidState() {
-		SwingUtilities.invokeLater(() -> {
-			if (invalidPanel != null) {
-				remove(invalidPanel);
-			}
+            add(layoutPluginPanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
+        });
+    }
 
-			mainPanel = new MainPanel(runeProfilePlugin);
+    public void loadInvalidState() {
+        SwingUtilities.invokeLater(() -> {
+            if (layoutPluginPanel != null) {
+                remove(layoutPluginPanel);
+            }
 
-			add(mainPanel, BorderLayout.CENTER);
-			revalidate();
-			repaint();
-		});
-	}
+            if (invalidPanel == null) {
+                invalidPanel = new InvalidPanel();
+            }
 
-	public void loadInvalidState() {
-		SwingUtilities.invokeLater(() -> {
-			if (mainPanel != null) {
-				remove(mainPanel);
-			}
+            invalidPanel.setHintText("Login to use this plugin.");
+            add(invalidPanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
+        });
+    }
 
-			if (invalidPanel == null) {
-				invalidPanel = new InvalidPanel();
-			}
+    public void loadInvalidRequestState() {
+        SwingUtilities.invokeLater(() -> {
+            if (layoutPluginPanel != null) {
+                remove(layoutPluginPanel);
+            }
 
-			invalidPanel.setHintText("Login to use this plugin.");
-			add(invalidPanel, BorderLayout.CENTER);
-			revalidate();
-			repaint();
-		});
-	}
+            if (invalidPanel == null) {
+                invalidPanel = new InvalidPanel();
+            }
 
-	public void loadInvalidRequestState() {
-		SwingUtilities.invokeLater(() -> {
-			if (mainPanel != null) {
-				remove(mainPanel);
-			}
-
-			if (invalidPanel == null) {
-				invalidPanel = new InvalidPanel();
-			}
-
-			invalidPanel.setHintText("Invalid world/mode.");
-			add(invalidPanel, BorderLayout.CENTER);
-			revalidate();
-			repaint();
-		});
-	}
+            invalidPanel.setHintText("Invalid world/mode.");
+            add(invalidPanel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
+        });
+    }
 }
