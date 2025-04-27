@@ -86,9 +86,6 @@ public class RuneProfilePlugin extends Plugin {
     private ChatCommandManager chatCommandManager;
 
     @Inject
-    private MenuManager menuManager;
-
-    @Inject
     private Gson gson;
 
     @Inject
@@ -106,7 +103,6 @@ public class RuneProfilePlugin extends Plugin {
     private SyncButtonManager syncButtonManager;
 
     // menu option
-    private static final String RUNEPROFILE_MENU_OPTION = "Open RuneProfile";
     private static final String KICK_OPTION = "Kick";
     private static final ImmutableList<String> AFTER_OPTIONS = ImmutableList.of("Message", "Add ignore", "Remove friend", "Delete", KICK_OPTION);
 
@@ -308,7 +304,7 @@ public class RuneProfilePlugin extends Plugin {
                 int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
                 int totalItemsCount = items.size();
 
-                final String replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + " : " + itemBuilder.toString();
+                final String replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + " : " + itemBuilder;
                 updateChatMessage(chatMessage, replacementMessage);
             });
         });
