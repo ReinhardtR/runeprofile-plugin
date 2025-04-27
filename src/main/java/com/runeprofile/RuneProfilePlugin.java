@@ -335,7 +335,7 @@ public class RuneProfilePlugin extends Plugin {
                 });
     }
 
-    public CompletableFuture<String> updateModelAsync() {
+    public void updateModelAsync() {
         isValidRequest();
 
         CompletableFuture<PlayerModelData> dataFuture = new CompletableFuture<>();
@@ -368,24 +368,23 @@ public class RuneProfilePlugin extends Plugin {
             dataFuture.complete(new PlayerModelData(accountHash, modelBytes, petModelBytes));
         });
 
-        return dataFuture.thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
-                .handle((result, ex) -> {
+        dataFuture.thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
+                .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating model", ex);
-                        final String errorMessage = getApiErrorMessage(ex, "Failed to update your model.");
+
+                        final String errorMessage = getApiErrorMessage(ex, "Failed to update your player model.");
+
+                        clientThread.invokeLater(() -> {
+                            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", errorMessage, "RuneProfile");
+                        });
+
                         throw new RuneProfileApiException(errorMessage);
                     }
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-                    final String dateString = sdf.format(new Date());
-
-                    configManager.setRSProfileConfiguration(
-                            CONFIG_GROUP,
-                            RuneProfileConfig.MODEL_UPDATE_DATE,
-                            dateString
-                    );
-
-                    return dateString;
+                    clientThread.invokeLater(() -> {
+                        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your player model has been updated!", "RuneProfile");
+                    });
                 }));
     }
 
