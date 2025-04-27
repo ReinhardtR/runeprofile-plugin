@@ -29,7 +29,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.hiscore.HiscoreSkill;
-import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -373,7 +372,8 @@ public class RuneProfilePlugin extends Plugin {
                 .handle((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating model", ex);
-                        throw new RuntimeException(ex.getMessage());
+                        final String errorMessage = getApiErrorMessage(ex, "Failed to update your model.");
+                        throw new RuneProfileApiException(errorMessage);
                     }
 
                     SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
@@ -506,11 +506,16 @@ public class RuneProfilePlugin extends Plugin {
         client.setModIcons(newModIcons);
     }
 
-    private String getApiErrorMessage(Throwable ex, String defaultMessage) {
-        Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
-        return cause instanceof RuneProfileApiException
-                ? cause.getMessage()
-                : defaultMessage;
+    public static String getApiErrorMessage(Throwable ex, String defaultMessage) {
+        String result = defaultMessage;
+
+        if (ex instanceof RuneProfileApiException) {
+            result = ex.getMessage();
+        } else if (ex.getCause() instanceof RuneProfileApiException) {
+            result = ex.getCause().getMessage();
+        }
+
+        return result;
     }
 
     public void DEV_generateHiscoreIconsJson() {

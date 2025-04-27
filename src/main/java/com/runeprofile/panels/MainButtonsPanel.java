@@ -10,9 +10,8 @@ import net.runelite.client.ui.FontManager;
 import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 public class MainButtonsPanel extends JPanel {
@@ -66,34 +65,31 @@ public class MainButtonsPanel extends JPanel {
         button.setPreferredSize(new Dimension(button.getPreferredSize().width, 30));
         button.addActionListener((event) -> {
             button.setEnabled(false);
-            statusLabel.setText("Last update: Updating...");
+            statusLabel.setText("Updating...");
             new SwingWorker<String, Void>() {
                 @Override
-                protected String doInBackground() throws Exception {
+                protected String doInBackground() {
                     try {
-                        return updateAction.get().get();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return "Update interrupted";
-                    } catch (IOException e) {
-                        log.debug(Arrays.toString(e.getStackTrace()));
-                        log.error("Failed to update: {}", e.toString());
-                        return "Failed to update";
+                        String dateString = updateAction.get().get();
+                        return "Last update: " + dateString;
+                    } catch (Exception e) {
+                        return RuneProfilePlugin.getApiErrorMessage(e, "Failed to update model");
                     }
                 }
 
                 @Override
                 protected void done() {
+                    String newLabel = null;
+
                     try {
-                        String lastUpdated = get();
-                        statusLabel.setText("Last update: " + lastUpdated);
-                    } catch (Exception e) {
-                        log.debug(Arrays.toString(e.getStackTrace()));
-                        log.error("Failed to update: {}", e.toString());
-                        statusLabel.setText("Last update: Failed");
+                        newLabel = get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
                     } finally {
                         button.setEnabled(true);
                     }
+
+                    statusLabel.setText(newLabel);
                 }
             }.execute();
         });
