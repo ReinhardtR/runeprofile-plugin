@@ -258,7 +258,6 @@ public class SyncButtonManager {
         text.setOnOpListener((JavaScriptCallback) ev -> onClick.run());
 
         boolean isWikiSyncPluginEnabled = Boolean.parseBoolean(configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, "wikisyncplugin"));
-        log.info("WikiSync plugin enabled: {}", isWikiSyncPluginEnabled);
         if (!isWikiSyncPluginEnabled) {
             // Shrink the top bar to avoid overlapping the new button
             draggableTopbar.setOriginalWidth(draggableTopbar.getOriginalWidth() - (w + (x - CLOSE_BUTTON_OFFSET)));
