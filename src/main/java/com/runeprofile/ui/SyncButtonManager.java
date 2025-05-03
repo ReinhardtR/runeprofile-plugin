@@ -26,6 +26,8 @@
 package com.runeprofile.ui;
 
 import com.google.inject.Inject;
+import com.runeprofile.RuneProfileConfig;
+import com.runeprofile.RuneProfilePlugin;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 
 import static java.lang.Math.round;
 
@@ -79,28 +82,46 @@ public class SyncButtonManager {
     private final ClientThread clientThread;
     private final EventBus eventBus;
     private final ConfigManager configManager;
+    private final RuneProfileConfig config;
 
     @Inject
     private SyncButtonManager(
             Client client,
             ClientThread clientThread,
             EventBus eventBus,
-            ConfigManager configManager
+            ConfigManager configManager,
+            RuneProfileConfig config
     ) {
         this.client = client;
         this.clientThread = clientThread;
         this.eventBus = eventBus;
         this.configManager = configManager;
+        this.config = config;
     }
 
     public void startUp() {
         eventBus.register(this);
-        clientThread.invokeLater(() -> tryAddButton(this::onButtonClick));
+
+        if (config.showClogSyncButton()) {
+            clientThread.invokeLater(() -> tryAddButton(this::onButtonClick));
+        }
     }
 
     public void shutDown() {
         eventBus.unregister(this);
+
         clientThread.invokeLater(this::removeButton);
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP) || client == null) return;
+
+        if (config.showClogSyncButton()) {
+            clientThread.invokeLater(() -> tryAddButton(this::onButtonClick));
+        } else {
+            clientThread.invokeLater(this::removeButton);
+        }
     }
 
     @Getter
@@ -127,6 +148,8 @@ public class SyncButtonManager {
 
     @Subscribe
     public void onScriptPostFired(ScriptPostFired scriptPostFired) {
+        if (!config.showClogSyncButton()) return;
+
         if (scriptPostFired.getScriptId() == COLLECTION_LOG_SETUP) {
             removeButton();
             addButton(Screen.COLLECTION_LOG, this::onButtonClick);

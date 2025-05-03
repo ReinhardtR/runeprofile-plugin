@@ -5,9 +5,7 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import com.runeprofile.data.*;
@@ -18,6 +16,10 @@ import com.runeprofile.utils.RuneProfileApiException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.clan.ClanMember;
+import net.runelite.api.clan.ClanRank;
+import net.runelite.api.clan.ClanSettings;
+import net.runelite.api.clan.ClanTitle;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
@@ -26,6 +28,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneScapeProfileType;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.hiscore.HiscoreSkill;
@@ -71,9 +74,6 @@ public class RuneProfilePlugin extends Plugin {
 
     @Inject
     private ClientThread clientThread;
-
-    @Inject
-    private ConfigManager configManager;
 
     @Inject
     private ItemManager itemManager;
@@ -137,10 +137,13 @@ public class RuneProfilePlugin extends Plugin {
 
         clientToolbar.addNavigation(navigationButton);
 
-        chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
 
         GameState state = client.getGameState();
         updatePanelState(state);
+
+        if (config.enableLogCommand()) {
+            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
+        }
 
         syncButtonManager.startUp();
     }
@@ -149,10 +152,20 @@ public class RuneProfilePlugin extends Plugin {
     protected void shutDown() {
         clientToolbar.removeNavigation(navigationButton);
         chatCommandManager.unregisterCommand(COLLECTION_LOG_COMMAND);
-
         syncButtonManager.shutDown();
     }
 
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!event.getGroup().equals(CONFIG_GROUP) || client == null) return;
+
+        if (config.enableLogCommand()) {
+            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
+        } else {
+            chatCommandManager.unregisterCommand(COLLECTION_LOG_COMMAND);
+        }
+    }
 
     @Subscribe
     private void onGameStateChanged(GameStateChanged gameStateChanged) {
@@ -220,7 +233,7 @@ public class RuneProfilePlugin extends Plugin {
 
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
-        if (!config.menuLookupOption()) return;
+        if (!config.showMenuLookupOption()) return;
 
         int groupId = WidgetUtil.componentToInterface(event.getActionParam1());
         String option = event.getOption();
@@ -279,7 +292,6 @@ public class RuneProfilePlugin extends Plugin {
         runeProfileApiClient.getCollectionLogPage(senderName, pageName).whenComplete((page, ex) -> {
             clientThread.invokeLater(() -> {
                 if (ex != null) {
-                    log.info("Instance of RuneProfileApiException: {}", ex.getClass());
                     final String errorMessage = getApiErrorMessage(ex, "Failed to load collection log page.");
                     updateChatMessage(chatMessage, errorMessage);
                     return;
@@ -393,10 +405,16 @@ public class RuneProfilePlugin extends Plugin {
         clientThread.invokeLater(() -> {
             PlayerData playerData = new PlayerData();
 
+            Player player = client.getLocalPlayer();
+            String username = player.getName();
+
             // general
             playerData.setId(AccountHash.getHashed(client));
-            playerData.setUsername(client.getLocalPlayer().getName());
+            playerData.setUsername(username);
             playerData.setAccountType(client.getVarbitValue(VarbitID.IRONMAN));
+
+            // clan
+            playerData.setClan(getPlayerClanData(player));
 
             // skills
             for (Skill skill : Skill.values()) {
@@ -441,6 +459,24 @@ public class RuneProfilePlugin extends Plugin {
             playerDataFuture.complete(playerData);
         });
         return playerDataFuture;
+    }
+
+    private PlayerClanData getPlayerClanData(Player player) {
+        if (!config.includeClanData()) return new PlayerClanData("", -1, "");
+
+        ClanSettings clanSettings = client.getClanSettings();
+        if (clanSettings == null) return null;
+
+        ClanMember member = clanSettings.findMember(player.getName());
+        if (member == null) return null;
+
+        ClanRank rank = member.getRank();
+        if (rank == null) return null;
+
+        ClanTitle title = clanSettings.titleForRank(rank);
+        if (title == null) return null;
+
+        return new PlayerClanData(clanSettings.getName(), rank.getRank(), title.getName());
     }
 
     private void isValidRequest() throws IllegalStateException {
