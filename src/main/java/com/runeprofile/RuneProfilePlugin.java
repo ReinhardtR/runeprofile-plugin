@@ -462,7 +462,7 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     private PlayerClanData getPlayerClanData(Player player) {
-        if (!config.includeClanData()) return new PlayerClanData("", -1, "");
+        if (!config.includeClanData()) return new PlayerClanData("", -1, -1, "");
 
         ClanSettings clanSettings = client.getClanSettings();
         if (clanSettings == null) return null;
@@ -476,7 +476,7 @@ public class RuneProfilePlugin extends Plugin {
         ClanTitle title = clanSettings.titleForRank(rank);
         if (title == null) return null;
 
-        return new PlayerClanData(clanSettings.getName(), rank.getRank(), title.getName());
+        return new PlayerClanData(clanSettings.getName(), rank.getRank(), title.getId(), title.getName());
     }
 
     private void isValidRequest() throws IllegalStateException {
@@ -581,14 +581,46 @@ public class RuneProfilePlugin extends Plugin {
                 }
             }
 
-            String outputFileName = "hiscore-icons.json";
-            File outputFile = new File(outputFileName);
-            try (FileWriter writer = new FileWriter(outputFile)) {
-                gson.toJson(icons, writer); // Serialize the map to JSON and write to the file
-                log.debug("Successfully generated hiscore icons in file = {}", outputFileName);
-            } catch (IOException e) {
-                log.debug("Failed to write hiscore icons file");
-            }
+            DEV_writeJsonFile("hiscore-icons.json", icons);
         });
+    }
+
+    public void DEV_generateClanRankIconsJson() {
+        clientThread.invokeLater(() -> {
+            Map<String, String> icons = new HashMap<>();
+
+            final EnumComposition clanIcons = client.getEnum(EnumID.CLAN_RANK_GRAPHIC);
+
+            for (int i = 0; i < clanIcons.size(); i++) {
+                final int key = clanIcons.getKeys()[i];
+
+                final BufferedImage sprite = spriteManager.getSprite(clanIcons.getIntValue(key), 0);
+
+                if (sprite == null) {
+                    log.debug("Failed to load icon for = {}", key);
+                    continue;
+                }
+
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    ImageIO.write(sprite, "png", baos);
+                    byte[] imageBytes = baos.toByteArray();
+                    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    icons.put(String.valueOf(key), base64Image);
+                } catch (IOException e) {
+                    log.debug("Failed to encode icon for = {}", key);
+                }
+            }
+
+            DEV_writeJsonFile("clan-rank-icons.json", icons);
+        });
+    }
+
+    private void DEV_writeJsonFile(String fileName, Object data) {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            gson.toJson(data, writer);
+            log.debug("Successfully wrote JSON to file = {}", fileName);
+        } catch (IOException e) {
+            log.debug("Failed to write JSON to file");
+        }
     }
 }

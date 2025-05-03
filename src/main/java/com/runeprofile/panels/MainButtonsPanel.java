@@ -40,11 +40,18 @@ public class MainButtonsPanel extends JPanel {
 
         if (plugin.isDeveloperMode()) {
             // DEV ONLY - generate hiscores icons
-            JButton generateHiscoreIcons = new JButton("DEV: Hiscores Icons");
+            JButton generateHiscoreIcons = createButton("DEV: Hiscores Icons");
             generateHiscoreIcons.addActionListener(e -> {
                 plugin.DEV_generateHiscoreIconsJson();
             });
             wrapper.add(generateHiscoreIcons);
+
+            // DEV ONLY - generate clan rank icons
+            JButton generateClanRankIcons = createButton("DEV: Clan Rank Icons");
+            generateClanRankIcons.addActionListener(e -> {
+                plugin.DEV_generateClanRankIconsJson();
+            });
+            wrapper.add(generateClanRankIcons);
         }
 
         add(wrapper, BorderLayout.NORTH);

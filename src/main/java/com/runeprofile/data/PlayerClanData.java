@@ -6,5 +6,6 @@ import lombok.Data;
 public class PlayerClanData {
     private final String name;
     private final int rank;
+    private final int icon;
     private final String title;
 }
