@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.annotations.Component;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -169,6 +170,11 @@ public class SyncButtonManager {
     }
 
     void addButton(Screen screen, Runnable onClick) {
+        // disallow updating from the adventure log, to avoid players updating their profile
+        // while viewing other players collection logs using the POH adventure log.
+        boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+        if (isOpenedFromAdventureLog) return;
+
         Widget parent = client.getWidget(screen.getParentId());
         Widget searchButton = client.getWidget(screen.getSearchButtonId());
         Widget collectionLogContainer = client.getWidget(screen.getCollectionLogContainer());
