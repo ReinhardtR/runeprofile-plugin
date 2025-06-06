@@ -34,6 +34,15 @@ public interface RuneProfileConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "show_side_panel",
+            name = "Show the RuneProfile side panel",
+            description = "Adds RuneProfile to the RuneLite plugin side bar."
+    )
+    default boolean showSidePanel() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "show_clog_sync_button",
             name = "Enable RuneProfile button",
             description = "Shows the RuneProfile button in the Collection Log window."

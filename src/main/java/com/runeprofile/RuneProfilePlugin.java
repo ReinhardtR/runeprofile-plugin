@@ -135,11 +135,12 @@ public class RuneProfilePlugin extends Plugin {
                 .priority(4)
                 .build();
 
-        clientToolbar.addNavigation(navigationButton);
-
-
         GameState state = client.getGameState();
         updatePanelState(state);
+
+        if (config.showSidePanel()) {
+            clientToolbar.addNavigation(navigationButton);
+        }
 
         if (config.enableLogCommand()) {
             chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
@@ -164,6 +165,12 @@ public class RuneProfilePlugin extends Plugin {
             chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
         } else {
             chatCommandManager.unregisterCommand(COLLECTION_LOG_COMMAND);
+        }
+
+        if (config.showSidePanel()) {
+            clientToolbar.addNavigation(navigationButton);
+        } else {
+            clientToolbar.removeNavigation(navigationButton);
         }
     }
 
