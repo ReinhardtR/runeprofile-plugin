@@ -2,10 +2,7 @@ package com.runeprofile;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.runeprofile.data.CollectionLogPage;
-import com.runeprofile.data.PlayerData;
-import com.runeprofile.data.PlayerModelData;
-import com.runeprofile.data.ProfileSearchResult;
+import com.runeprofile.data.*;
 import com.runeprofile.utils.RuneProfileApiException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -181,5 +178,11 @@ public class RuneProfileApiClient {
                 .build();
         return getHttpRequestAsync(url)
                 .thenApplyAsync((response -> handleResponse(response, ProfileSearchResult[].class)));
+    }
+
+    public CompletableFuture<Void> setDefaultClogPage(DefaultClogPageData data) {
+        HttpUrl url = buildApiUrl("profiles", "set-default-clog-page");
+        return postHttpRequestAsync(url, gson.toJson(data))
+                .thenApplyAsync((response) -> handleResponse(response, null));
     }
 }
