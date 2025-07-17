@@ -52,6 +52,15 @@ public interface RuneProfileConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "autosync_new_clog_items",
+            name = "Auto-sync New Collection Log items",
+            description = "Automatically syncs new items added to your Collection Log to your RuneProfile."
+    )
+    default boolean autosyncNewClogItems() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "log_command",
             name = "Enable !log command",
             description = "Enables the !log command in the game chat."

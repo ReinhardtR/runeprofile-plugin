@@ -7,7 +7,7 @@ import java.awt.*;
 
 public class LayoutPluginPanel extends JPanel {
     @Inject
-    public LayoutPluginPanel(MainButtonsPanel mainButtonsPanel, DefaultClogPagePanel defaultClogPagePanel, SearchPanel searchPanel) {
+    public LayoutPluginPanel(MainButtonsPanel mainButtonsPanel, SearchPanel searchPanel) {
         setLayout(new BorderLayout());
 
         // Main content panel with vertical (flex-column-like) layout
@@ -21,12 +21,6 @@ public class LayoutPluginPanel extends JPanel {
         mainButtonsPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, mainButtonsPanel.getPreferredSize().height)); // Limit vertical growth
 
         contentPanel.add(Box.createVerticalStrut(32)); // spacing between components
-
-        defaultClogPagePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        contentPanel.add(defaultClogPagePanel);
-        defaultClogPagePanel.setMaximumSize(new Dimension(Short.MAX_VALUE, defaultClogPagePanel.getPreferredSize().height));
-
-        contentPanel.add(Box.createVerticalStrut(32));
 
         searchPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(searchPanel);

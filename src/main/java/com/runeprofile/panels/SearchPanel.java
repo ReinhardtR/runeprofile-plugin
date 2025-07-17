@@ -1,10 +1,10 @@
 package com.runeprofile.panels;
 
 import com.runeprofile.RuneProfileApiClient;
-import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.data.ProfileSearchResult;
 import com.runeprofile.utils.RuneProfileApiException;
 import com.runeprofile.utils.UsernameAutocompleter;
+import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
@@ -21,15 +21,11 @@ import java.util.List;
 
 @Slf4j
 public class SearchPanel extends JPanel {
-    private final RuneProfilePlugin plugin;
-
     private final JPanel resultsPanel;
     private final IconTextField searchField;
 
     @Inject
-    public SearchPanel(RuneProfilePlugin plugin, RuneProfileApiClient runeProfileApiClient, UsernameAutocompleter usernameAutocompleter) {
-        this.plugin = plugin;
-
+    public SearchPanel(RuneProfileApiClient runeProfileApiClient, UsernameAutocompleter usernameAutocompleter) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         JLabel title = new JLabel("Search profiles");
@@ -128,7 +124,7 @@ public class SearchPanel extends JPanel {
         resultButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         resultButton.setToolTipText("Open in browser");
 
-        resultButton.addActionListener((e) -> plugin.openProfileInBrowser(result.getUsername()));
+        resultButton.addActionListener((e) -> Utils.openProfileInBrowser(result.getUsername()));
         return resultButton;
     }
 }

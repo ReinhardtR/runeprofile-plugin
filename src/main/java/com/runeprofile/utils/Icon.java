@@ -25,8 +25,9 @@
  *
  */
 
-package com.runeprofile;
+package com.runeprofile.utils;
 
+import com.runeprofile.RuneProfilePlugin;
 import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;

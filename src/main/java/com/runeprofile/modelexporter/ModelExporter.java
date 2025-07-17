@@ -25,6 +25,8 @@
  */
 package com.runeprofile.modelexporter;
 
+import lombok.NonNull;
+import net.runelite.api.Client;
 import net.runelite.api.Model;
 
 import java.awt.Color;
@@ -38,7 +40,7 @@ import java.util.Objects;
 public class ModelExporter {
     private final static int[] colorPalette = JagexColor.createPalette(JagexColor.BRIGHTNESS_MIN);
 
-    public static byte[] toBytes(Model m) throws IOException {
+    public static byte[] toBytes(@NonNull Client client, Model m) throws IOException {
         List<Vertex> vertices = new ArrayList<>();
         for (int fi = 0; fi < m.getFaceCount(); fi++) {
             // determine vertex colors (textured or colored?)
@@ -50,7 +52,7 @@ public class ModelExporter {
                 textureId = m.getFaceTextures()[fi];
             if (textureId != -1) {
                 // get average color of texture
-                vc1 = TextureColor.getColor(textureId);
+                vc1 = TextureColor.getColor(client, textureId);
                 vc2 = vc1;
                 vc3 = vc1;
             } else {

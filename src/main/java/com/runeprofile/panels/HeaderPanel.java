@@ -1,6 +1,6 @@
 package com.runeprofile.panels;
 
-import com.runeprofile.Icon;
+import com.runeprofile.utils.Icon;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.LinkBrowser;
@@ -18,7 +18,6 @@ public class HeaderPanel extends JPanel {
     private static final int iconSize = 16;
     private final JPanel buttonsContainer;
 
-    @Inject
     public HeaderPanel() {
         setLayout(new BorderLayout());
         setBorder(new EmptyBorder(10, 10, 10, 10));

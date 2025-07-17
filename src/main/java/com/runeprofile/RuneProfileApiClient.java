@@ -18,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @Slf4j
-@RequiredArgsConstructor
 public class RuneProfileApiClient {
     private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
 
@@ -37,7 +36,7 @@ public class RuneProfileApiClient {
 
     @Inject
     public RuneProfileApiClient() {
-        boolean isDevMode = false;
+        boolean isDevMode = true;
 
         String runeliteVersion = RuneLiteProperties.getVersion();
         userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;

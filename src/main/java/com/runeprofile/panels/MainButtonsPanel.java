@@ -1,39 +1,33 @@
 package com.runeprofile.panels;
 
 import com.runeprofile.RuneProfilePlugin;
+import com.runeprofile.utils.DevTools;
+import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.client.callback.ClientThread;
 
 import javax.inject.Inject;
 import javax.swing.*;
 import java.awt.*;
 
-
 @Slf4j
 public class MainButtonsPanel extends JPanel {
     @Inject
-    public MainButtonsPanel(RuneProfilePlugin plugin, Client client, ClientThread clientThread) {
+    public MainButtonsPanel(RuneProfilePlugin plugin, Client client, DevTools devTools) {
         setLayout(new BorderLayout());
         JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 6));
 
         // Update Model
         JButton updateModelButton = createButton("Update Player Model");
-        updateModelButton.addActionListener((e) -> {
-            clientThread.invokeLater(() -> {
-                client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating player model...", "RuneProfile");
-            });
-            plugin.updateModelAsync();
-        });
+        updateModelButton.addActionListener((e) -> plugin.updateModelAsync());
         wrapper.add(updateModelButton);
 
         // Open Profile
         JButton openProfileButton = createButton("Open Profile");
         openProfileButton.addActionListener(e -> {
-            String username = RuneProfilePlugin.getClient().getLocalPlayer().getName();
+            String username = client.getLocalPlayer().getName();
             if (username == null) return;
-            plugin.openProfileInBrowser(username);
+            Utils.openProfileInBrowser(username);
         });
 
         wrapper.add(openProfileButton);
@@ -42,14 +36,14 @@ public class MainButtonsPanel extends JPanel {
             // DEV ONLY - generate hiscores icons
             JButton generateHiscoreIcons = createButton("DEV: Hiscores Icons");
             generateHiscoreIcons.addActionListener(e -> {
-                plugin.DEV_generateHiscoreIconsJson();
+                devTools.generateHiscoreIconsJson();
             });
             wrapper.add(generateHiscoreIcons);
 
             // DEV ONLY - generate clan rank icons
             JButton generateClanRankIcons = createButton("DEV: Clan Rank Icons");
             generateClanRankIcons.addActionListener(e -> {
-                plugin.DEV_generateClanRankIconsJson();
+                devTools.generateClanRankIconsJson();
             });
             wrapper.add(generateClanRankIcons);
         }
