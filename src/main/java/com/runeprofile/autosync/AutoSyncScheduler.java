@@ -38,7 +38,7 @@ public class AutoSyncScheduler {
     private ScheduledFuture<?> autoSyncFuture;
 
     private static final int RAPID_SYNC_SECONDS = 3;
-    private static final int AUTO_SYNC_MINUTES = 1;
+    private static final int AUTO_SYNC_MINUTES = 15;
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isEnabled() {
@@ -76,17 +76,14 @@ public class AutoSyncScheduler {
     public void onGameStateChanged(GameStateChanged event) {
         if (!isEnabled()) return;
 
-        if (event.getGameState() == GameState.LOGGED_IN) {
-            start();
-        }
-
+        // Update on logout
         if (event.getGameState() == GameState.LOGIN_SCREEN && client.getLocalPlayer() != null) {
+            log.debug("Updating profile on logout...");
             scheduledExecutorService.execute(() -> plugin.updateProfileAsync(true));
-            stop();
         }
     }
 
-    public void resetAutoSyncTimer() {
+    public synchronized void resetAutoSyncTimer() {
         if (autoSyncFuture != null) {
             autoSyncFuture.cancel(false);
         }
@@ -95,7 +92,7 @@ public class AutoSyncScheduler {
         autoSyncFuture = scheduledExecutorService.schedule(this::syncAndResetTimer, AUTO_SYNC_MINUTES, TimeUnit.MINUTES);
     }
 
-    public void startRapidSync() {
+    public synchronized void startRapidSync() {
         log.debug("Starting rapid sync...");
         resetAutoSyncTimer();
         scheduledExecutorService.schedule(this::syncAndResetTimer, RAPID_SYNC_SECONDS, TimeUnit.SECONDS);
@@ -103,7 +100,6 @@ public class AutoSyncScheduler {
 
     private synchronized void start() {
         log.debug("Starting auto-sync scheduler...");
-        // Schedule the first auto-sync
         resetAutoSyncTimer();
     }
 
