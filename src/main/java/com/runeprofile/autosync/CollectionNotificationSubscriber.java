@@ -75,7 +75,7 @@ public class CollectionNotificationSubscriber {
 
     @Subscribe
     public void onChatMessage(ChatMessage chatMessage) {
-        if (!isEnabled() || chatMessage.getType() != ChatMessageType.GAMEMESSAGE || client.getVarbitValue(VarbitID.OPTION_COLLECTION_NEW_ITEM) != 1) {
+        if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE || client.getVarbitValue(VarbitID.OPTION_COLLECTION_NEW_ITEM) != 1 || !isEnabled()) {
             return;
         }
 
