@@ -27,9 +27,7 @@ import java.util.List;
 
 @Slf4j
 @PluginDescriptor(
-        name = "RuneProfile",
-        description = "Share your achievements on RuneProfile.com",
-        tags = {"runeprofile", "rune", "profile", "collection"}
+        name = "RuneProfile"
 )
 public class RuneProfilePlugin extends Plugin {
     public static final String CONFIG_GROUP = "runeprofile";
@@ -119,6 +117,7 @@ public class RuneProfilePlugin extends Plugin {
         }
 
         if (!isAutoSync) {
+            // If this is a manual sync, reset the auto-sync timer
             autoSyncScheduler.resetAutoSyncTimer();
         }
 
