@@ -55,6 +55,15 @@ public class PlayerDataService {
         clogItems.put(itemId, quantity);
     }
 
+    public CompletableFuture<String> getAccountIdAsync() {
+        CompletableFuture<String> accountIdFuture = new CompletableFuture<>();
+        clientThread.invokeLater(() -> {
+            String accountId = AccountHash.getHashed(client);
+            accountIdFuture.complete(accountId);
+        });
+        return accountIdFuture;
+    }
+
     public CompletableFuture<PlayerData> getPlayerDataAsync() {
         CompletableFuture<PlayerData> playerDataFuture = new CompletableFuture<>();
         clientThread.invokeLater(() -> {

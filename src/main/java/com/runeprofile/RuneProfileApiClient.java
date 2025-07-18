@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.runeprofile.data.*;
 import com.runeprofile.utils.RuneProfileApiException;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.RuneLiteProperties;
 import okhttp3.*;
@@ -181,6 +180,12 @@ public class RuneProfileApiClient {
 
     public CompletableFuture<Void> setDefaultClogPage(DefaultClogPageData data) {
         HttpUrl url = buildApiUrl("profiles", "set-default-clog-page");
+        return postHttpRequestAsync(url, gson.toJson(data))
+                .thenApplyAsync((response) -> handleResponse(response, null));
+    }
+
+    public CompletableFuture<Void> addActivities(AddActivities data) {
+        HttpUrl url = buildApiUrl("profiles", "activities");
         return postHttpRequestAsync(url, gson.toJson(data))
                 .thenApplyAsync((response) -> handleResponse(response, null));
     }

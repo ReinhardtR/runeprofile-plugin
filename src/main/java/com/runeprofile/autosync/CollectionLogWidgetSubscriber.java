@@ -10,9 +10,14 @@ import net.runelite.api.events.*;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemStack;
+import net.runelite.client.plugins.loottracker.LootReceived;
+import net.runelite.http.api.loottracker.LootRecordType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
@@ -73,6 +78,13 @@ public class CollectionLogWidgetSubscriber {
             if (isManualSync) {
                 scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false));
                 isManualSync = false;
+
+                Collection<ItemStack> itemStack = new ArrayList<>();
+                itemStack.add(new ItemStack(4151, 2)); // 2x abyssal whip
+                itemStack.add(new ItemStack(4708, 10)); // 10x ahrim hood
+                itemStack.add(new ItemStack(28283, 1)); // 1x vestige
+
+                eventBus.post(new LootReceived("Test", 1, LootRecordType.UNKNOWN, itemStack, 0));
             }
             isAutoClogRetrieval = false;
         }

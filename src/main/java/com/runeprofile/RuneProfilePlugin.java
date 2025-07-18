@@ -2,10 +2,10 @@ package com.runeprofile;
 
 import com.google.inject.Provides;
 
-import com.runeprofile.autosync.AutoSyncScheduler;
-import com.runeprofile.autosync.CollectionNotificationSubscriber;
-import com.runeprofile.autosync.CollectionLogWidgetSubscriber;
-import com.runeprofile.autosync.PlayerDataService;
+import com.runeprofile.autosync.*;
+import com.runeprofile.data.AddActivities;
+import com.runeprofile.data.activities.Activity;
+import com.runeprofile.data.activities.ActivityData;
 import com.runeprofile.ui.ChatPlayerMenuOption;
 import com.runeprofile.ui.CollectionLogCommand;
 import com.runeprofile.ui.CollectionLogPageMenuOption;
@@ -23,6 +23,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.List;
 
 @Slf4j
 @PluginDescriptor(
@@ -60,6 +61,9 @@ public class RuneProfilePlugin extends Plugin {
     private CollectionNotificationSubscriber collectionNotificationSubscriber;
 
     @Inject
+    private ValuableDropSubscriber valuableDropSubscriber;
+
+    @Inject
     private ManualUpdateButtonManager manualUpdateButtonManager;
 
     @Inject
@@ -83,30 +87,30 @@ public class RuneProfilePlugin extends Plugin {
         this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         runeProfilePanel.startUp();
 
+        autoSyncScheduler.startUp();
+        valuableDropSubscriber.startUp();
+        collectionLogWidgetSubscriber.startUp();
+        collectionNotificationSubscriber.startUp();
+
         manualUpdateButtonManager.startUp();
         collectionLogPageMenuOption.startUp();
         chatPlayerMenuOption.startUp();
         collectionLogCommand.startUp();
-
-        collectionLogWidgetSubscriber.startUp();
-        collectionNotificationSubscriber.startUp();
-
-        autoSyncScheduler.startUp();
     }
 
     @Override
     protected void shutDown() {
         runeProfilePanel.shutDown();
 
+        autoSyncScheduler.shutDown();
+        valuableDropSubscriber.shutDown();
+        collectionLogWidgetSubscriber.shutDown();
+        collectionNotificationSubscriber.shutDown();
+
         manualUpdateButtonManager.shutDown();
         collectionLogPageMenuOption.shutDown();
         chatPlayerMenuOption.shutDown();
         collectionLogCommand.shutDown();
-
-        collectionLogWidgetSubscriber.shutDown();
-        collectionNotificationSubscriber.shutDown();
-
-        autoSyncScheduler.shutDown();
     }
 
     public void updateProfileAsync(boolean isAutoSync) {
@@ -139,6 +143,8 @@ public class RuneProfilePlugin extends Plugin {
                             client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your profile has been updated!", "RuneProfile");
                         });
                     }
+
+                    playerDataService.reset();
                 });
     }
 
@@ -165,6 +171,26 @@ public class RuneProfilePlugin extends Plugin {
                         client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your player model has been updated!", "RuneProfile");
                     });
                 }));
+    }
+
+    public void addActivitiesAsync(List<? extends Activity<? extends ActivityData>> activities) {
+        if (!isValidPlayerState()) {
+            throw new IllegalStateException("Invalid player state");
+        }
+
+        playerDataService.getAccountIdAsync().thenCompose((accountId) -> runeProfileApiClient.addActivities(new AddActivities(accountId, activities))).whenComplete((result, ex) -> {
+            if (ex != null) {
+                log.error("Error adding activities", ex);
+
+                final String errorMessage = Utils.getApiErrorMessage(ex, "Failed to add activities.");
+
+                clientThread.invokeLater(() -> {
+                    client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", errorMessage, "RuneProfile");
+                });
+
+                throw new RuneProfileApiException(errorMessage);
+            }
+        });
     }
 
     public boolean isValidPlayerState() {

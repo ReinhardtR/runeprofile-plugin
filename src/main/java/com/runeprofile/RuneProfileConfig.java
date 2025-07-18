@@ -7,27 +7,60 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup(RuneProfilePlugin.CONFIG_GROUP)
 public interface RuneProfileConfig extends Config {
     @ConfigItem(
-            keyName = "update_on_logout",
-            name = "Update on logout",
-            description = "Automatically update your RuneProfile on logout. (Excluding model and Collection Log)"
+            keyName = "autosync_profile",
+            name = "Auto-sync Profile",
+            description = "Automatically updates your RuneProfile for you.",
+            position = 1
     )
-    default boolean updateOnLogout() {
+    default boolean autosyncProfile() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "track_valuable_drops",
+            name = "Track Valuable Drops",
+            description = "Adds valuable drops to your RuneProfile activities. (Requires auto-sync to be enabled)",
+            position = 2
+    )
+    default boolean trackValuableDrops() {
         return true;
     }
 
     @ConfigItem(
             keyName = "include_clan_data",
             name = "Include Clan in Profile",
-            description = "Include your clan in your profile data when updating."
+            description = "Include your clan on your RuneProfile.",
+            position = 3
     )
     default boolean includeClanData() {
         return true;
     }
 
     @ConfigItem(
+            keyName = "log_command",
+            name = "Enable !log command",
+            description = "Enables the !log command in the game chat.",
+            position = 4
+    )
+    default boolean enableLogCommand() {
+        return true;
+    }
+
+    @ConfigItem(
+            keyName = "show_clog_sync_button",
+            name = "Enable RuneProfile Sync button",
+            description = "Shows the RuneProfile button in the Collection Log menu.",
+            position = 5
+    )
+    default boolean showClogSyncButton() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "menu_lookup_option",
-            name = "Menu option",
-            description = "Add RuneProfile option to menus"
+            name = "Chat menu option",
+            description = "Add RuneProfile option to chat menus",
+            position = 6
     )
     default boolean showMenuLookupOption() {
         return false;
@@ -36,36 +69,10 @@ public interface RuneProfileConfig extends Config {
     @ConfigItem(
             keyName = "show_side_panel",
             name = "Show the RuneProfile side panel",
-            description = "Adds RuneProfile to the RuneLite plugin side bar."
+            description = "Adds RuneProfile to the RuneLite plugin side bar.",
+            position = 7
     )
     default boolean showSidePanel() {
-        return true;
-    }
-
-    @ConfigItem(
-            keyName = "show_clog_sync_button",
-            name = "Enable RuneProfile button",
-            description = "Shows the RuneProfile button in the Collection Log window."
-    )
-    default boolean showClogSyncButton() {
-        return true;
-    }
-
-    @ConfigItem(
-            keyName = "autosync_new_clog_items",
-            name = "Auto-sync New Collection Log items",
-            description = "Automatically syncs new items added to your Collection Log to your RuneProfile."
-    )
-    default boolean autosyncNewClogItems() {
-        return true;
-    }
-
-    @ConfigItem(
-            keyName = "log_command",
-            name = "Enable !log command",
-            description = "Enables the !log command in the game chat."
-    )
-    default boolean enableLogCommand() {
         return true;
     }
 }

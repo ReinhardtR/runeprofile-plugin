@@ -48,10 +48,9 @@ public class CollectionNotificationSubscriber {
 
     private final AtomicBoolean popupStarted = new AtomicBoolean(false);
 
-
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
-        return config.autosyncNewClogItems() && plugin.isValidPlayerState();
+        return config.autosyncProfile() && plugin.isValidPlayerState();
     }
 
     public void startUp() {
