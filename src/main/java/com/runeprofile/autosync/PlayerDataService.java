@@ -45,7 +45,7 @@ public class PlayerDataService {
     @Subscribe
     public void onGameStateChanged(GameStateChanged gameStateChanged) {
         GameState gameState = gameStateChanged.getGameState();
-        if (gameState != GameState.HOPPING && gameState != GameState.LOGGED_IN) {
+        if (gameState != GameState.LOGGED_IN) {
             reset();
         }
     }
