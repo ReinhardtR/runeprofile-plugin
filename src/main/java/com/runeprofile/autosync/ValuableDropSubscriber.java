@@ -18,12 +18,16 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
 @Singleton
 public class ValuableDropSubscriber {
     @Inject
     private EventBus eventBus;
+
+    @Inject
+    private ScheduledExecutorService scheduledExecutorService;
 
     @Inject
     private ItemManager itemManager;
@@ -77,6 +81,6 @@ public class ValuableDropSubscriber {
             return;
         }
 
-        plugin.addActivitiesAsync(valuableDrops);
+        scheduledExecutorService.execute(() -> plugin.addActivitiesAsync(valuableDrops));
     }
 }

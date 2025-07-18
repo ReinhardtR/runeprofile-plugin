@@ -81,7 +81,7 @@ public class AutoSyncScheduler {
         }
 
         if (event.getGameState() == GameState.LOGIN_SCREEN && client.getLocalPlayer() != null) {
-            plugin.updateProfileAsync(true);
+            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(true));
             stop();
         }
     }
@@ -118,6 +118,6 @@ public class AutoSyncScheduler {
     private synchronized void syncAndResetTimer() {
         log.debug("Syncing profile...");
         resetAutoSyncTimer();
-        plugin.updateProfileAsync(true);
+        scheduledExecutorService.execute(() -> plugin.updateProfileAsync(true));
     }
 }
