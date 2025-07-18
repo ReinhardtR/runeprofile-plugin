@@ -35,7 +35,7 @@ public class RuneProfileApiClient {
 
     @Inject
     public RuneProfileApiClient() {
-        boolean isDevMode = true;
+        boolean isDevMode = false;
 
         String runeliteVersion = RuneLiteProperties.getVersion();
         userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;
