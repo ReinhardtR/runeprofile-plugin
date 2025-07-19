@@ -10,14 +10,9 @@ import net.runelite.api.events.*;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ItemStack;
-import net.runelite.client.plugins.loottracker.LootReceived;
-import net.runelite.http.api.loottracker.LootRecordType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
@@ -67,6 +62,9 @@ public class CollectionLogWidgetSubscriber {
         }
     }
 
+    // Code from: WikiSync
+    // Repository: https://github.com/weirdgloop/WikiSync
+    // License: BSD 2-Clause License
     @Subscribe
     public void onGameTick(GameTick gameTick) {
         int tick = client.getTickCount();
@@ -83,6 +81,9 @@ public class CollectionLogWidgetSubscriber {
         }
     }
 
+    // Code from: WikiSync
+    // Repository: https://github.com/weirdgloop/WikiSync
+    // License: BSD 2-Clause License
     @Subscribe
     public void onScriptPreFired(ScriptPreFired preFired) {
         if (preFired.getScriptId() == 4100) {

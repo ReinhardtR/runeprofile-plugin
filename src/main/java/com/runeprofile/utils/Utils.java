@@ -15,10 +15,16 @@ import java.util.function.Function;
 
 @UtilityClass
 public class Utils {
+    // Code from: DinkPlugin
+    // Repository: https://github.com/pajlads/DinkPlugin
+    // License: BSD 2-Clause License
     public <T> CompletableFuture<T> readJson(@NonNull OkHttpClient httpClient, @NonNull Gson gson, @NonNull String url, @NonNull TypeToken<T> type) {
         return readUrl(httpClient, url, reader -> gson.fromJson(reader, type.getType()));
     }
 
+    // Code from: DinkPlugin
+    // Repository: https://github.com/pajlads/DinkPlugin
+    // License: BSD 2-Clause License
     public <T> CompletableFuture<T> readUrl(@NonNull OkHttpClient httpClient, @NonNull String url, @NonNull Function<Reader, T> transformer) {
         CompletableFuture<T> future = new CompletableFuture<>();
         Request request = new Request.Builder().url(url).build();
@@ -43,6 +49,9 @@ public class Utils {
         return future;
     }
 
+    // Code from: DinkPlugin
+    // Repository: https://github.com/pajlads/DinkPlugin
+    // License: BSD 2-Clause License
     public String sanitize(String str) {
         if (str == null || str.isEmpty()) return "";
         return Text.removeTags(str.replace("<br>", "\n")).replace('\u00A0', ' ').trim();

@@ -73,6 +73,9 @@ public class CollectionNotificationSubscriber {
         }
     }
 
+    // Code from: DinkPlugin
+    // Repository: https://github.com/pajlads/DinkPlugin
+    // License: BSD 2-Clause License
     @Subscribe
     public void onChatMessage(ChatMessage chatMessage) {
         if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE || client.getVarbitValue(VarbitID.OPTION_COLLECTION_NEW_ITEM) != 1 || !isEnabled()) {
@@ -87,6 +90,9 @@ public class CollectionNotificationSubscriber {
         }
     }
 
+    // Code from: DinkPlugin
+    // Repository: https://github.com/pajlads/DinkPlugin
+    // License: BSD 2-Clause License
     @Subscribe
     public void onScriptPreFired(ScriptPreFired event) {
         final int scriptId = event.getScriptId();
