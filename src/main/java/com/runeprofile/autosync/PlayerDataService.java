@@ -156,6 +156,7 @@ public class PlayerDataService {
                 modelBytes = ModelExporter.toBytes(client, model);
             } catch (IOException e) {
                 dataFuture.completeExceptionally(e);
+                return;
             }
 
             NPC pet = client.getFollower();
@@ -167,6 +168,7 @@ public class PlayerDataService {
                     petModelBytes = ModelExporter.toBytes(client, petModel);
                 } catch (IOException e) {
                     dataFuture.completeExceptionally(e);
+                    return;
                 }
             }
 
