@@ -114,7 +114,6 @@ public class ManualUpdateButtonManager {
         final boolean existingButton = Arrays.stream(menuChildren)
                 .anyMatch(w -> w.getText().equals(BUTTON_TEXT));
 
-        log.debug("Existing button found: {}", existingButton);
         if (!existingButton) {
             final Widget background = menu.createChild(WidgetType.RECTANGLE)
                     .setOriginalWidth(lastRectangle.getOriginalWidth())
