@@ -2,10 +2,12 @@ package com.runeprofile.ui;
 
 import com.google.inject.Inject;
 import com.runeprofile.RuneProfileConfig;
+import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.autosync.CollectionLogWidgetSubscriber;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -14,6 +16,7 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
 import java.util.*;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static java.lang.Math.round;
 
@@ -26,6 +29,8 @@ public class ManualUpdateButtonManager {
 
     private final Client client;
     private final EventBus eventBus;
+    private final ScheduledExecutorService scheduledExecutorService;
+    private final RuneProfilePlugin plugin;
     private final RuneProfileConfig config;
     private final CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
 
@@ -36,11 +41,15 @@ public class ManualUpdateButtonManager {
     private ManualUpdateButtonManager(
             Client client,
             EventBus eventBus,
+            ScheduledExecutorService scheduledExecutorService,
+            RuneProfilePlugin plugin,
             RuneProfileConfig config,
             CollectionLogWidgetSubscriber collectionLogWidgetSubscriber
     ) {
         this.client = client;
         this.eventBus = eventBus;
+        this.scheduledExecutorService = scheduledExecutorService;
+        this.plugin = plugin;
         this.config = config;
         this.collectionLogWidgetSubscriber = collectionLogWidgetSubscriber;
     }
@@ -77,11 +86,18 @@ public class ManualUpdateButtonManager {
         }
         lastAttemptedUpdate = client.getTickCount();
 
-        collectionLogWidgetSubscriber.setManualSync(true);
-        client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
-        client.runScript(2240);
+        // if there is no items in the collection log, we can't offload the update to the collection log widget subscriber
+        // since the script 4100 is never fired.
+        int collectionCount = client.getVarpValue(VarPlayerID.COLLECTION_COUNT);
+        if (collectionCount == 0) {
+            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false));
+        } else {
+            collectionLogWidgetSubscriber.setManualSync(true);
+            client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
+            client.runScript(2240);
 
-        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your profile...", "RuneProfile");
+            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your profile...", "RuneProfile");
+        }
     }
 
     private void addButton(int menuId, Runnable onClick) throws NullPointerException, NoSuchElementException {
