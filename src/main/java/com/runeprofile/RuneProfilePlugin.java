@@ -121,7 +121,13 @@ public class RuneProfilePlugin extends Plugin {
             autoSyncScheduler.resetAutoSyncTimer();
         }
 
-        playerDataService.getPlayerDataAsync().thenCompose((data) -> runeProfileApiClient.updateProfileAsync(data))
+        playerDataService.getPlayerDataAsync().thenCompose((data) -> {
+                    // sanity check: a player reported syncs going through on invalid worlds
+                    if (!isValidPlayerState()) {
+                        throw new IllegalStateException("Invalid player state after fetching player data");
+                    }
+                    return runeProfileApiClient.updateProfileAsync(data);
+                })
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating profile", ex);
