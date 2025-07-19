@@ -29,6 +29,7 @@ public class ManualUpdateButtonManager {
     private final RuneProfileConfig config;
     private final CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
 
+    private int baseMenuHeight = -1;
     private int lastAttemptedUpdate = -1;
 
     @Inject
@@ -62,6 +63,7 @@ public class ManualUpdateButtonManager {
         int menuId = (int) args[3];
 
         try {
+            log.debug("Adding RuneProfile button to menu with ID: {}", menuId);
             addButton(menuId, this::onButtonClick);
         } catch (Exception e) {
             log.debug("Failed to add RuneProfile button to menu: {}", e.getMessage());
@@ -91,24 +93,29 @@ public class ManualUpdateButtonManager {
         Widget menu = Objects.requireNonNull(client.getWidget(menuId));
         Widget[] menuChildren = Objects.requireNonNull(menu.getChildren());
 
+        if (baseMenuHeight == -1) {
+            baseMenuHeight = menu.getOriginalHeight();
+        }
+
+        List<Widget> reversedMenuChildren = new ArrayList<>(Arrays.asList(menuChildren));
+        Collections.reverse(reversedMenuChildren);
+        Widget lastRectangle = reversedMenuChildren.stream()
+                .filter(w -> w.getType() == WidgetType.RECTANGLE)
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No RECTANGLE widget found in menu"));
+        Widget lastText = reversedMenuChildren.stream()
+                .filter(w -> w.getType() == WidgetType.TEXT)
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No TEXT widget found in menu"));
+
+        final int buttonHeight = lastRectangle.getHeight();
+        final int buttonY = lastRectangle.getOriginalY() + buttonHeight;
+
         final boolean existingButton = Arrays.stream(menuChildren)
                 .anyMatch(w -> w.getText().equals(BUTTON_TEXT));
-        
+
+        log.debug("Existing button found: {}", existingButton);
         if (!existingButton) {
-            List<Widget> reversedMenuChildren = new ArrayList<>(Arrays.asList(menuChildren));
-            Collections.reverse(reversedMenuChildren);
-            Widget lastRectangle = reversedMenuChildren.stream()
-                    .filter(w -> w.getType() == WidgetType.RECTANGLE)
-                    .findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("No RECTANGLE widget found in menu"));
-            Widget lastText = reversedMenuChildren.stream()
-                    .filter(w -> w.getType() == WidgetType.TEXT)
-                    .findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("No TEXT widget found in menu"));
-
-            final int buttonHeight = lastRectangle.getHeight();
-            final int buttonY = lastRectangle.getOriginalY() + buttonHeight;
-
             final Widget background = menu.createChild(WidgetType.RECTANGLE)
                     .setOriginalWidth(lastRectangle.getOriginalWidth())
                     .setOriginalHeight(lastRectangle.getOriginalHeight())
@@ -135,7 +142,9 @@ public class ManualUpdateButtonManager {
             text.setAction(0, "Update your RuneProfile");
             text.setOnOpListener((JavaScriptCallback) ev -> onClick.run());
             text.revalidate();
+        }
 
+        if (menu.getOriginalHeight() <= baseMenuHeight) {
             menu.setOriginalHeight((menu.getOriginalHeight() + buttonHeight));
         }
 
