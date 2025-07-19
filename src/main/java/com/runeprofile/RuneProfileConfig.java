@@ -7,7 +7,7 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup(RuneProfilePlugin.CONFIG_GROUP)
 public interface RuneProfileConfig extends Config {
     @ConfigItem(
-            keyName = "autosync_profile",
+            keyName = "update_on_logout", // config option was previously used only for update on logout
             name = "Auto-sync Profile",
             description = "Automatically updates your RuneProfile for you.",
             position = 1
