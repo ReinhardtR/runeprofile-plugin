@@ -78,13 +78,6 @@ public class CollectionLogWidgetSubscriber {
             if (isManualSync) {
                 scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false));
                 isManualSync = false;
-
-                Collection<ItemStack> itemStack = new ArrayList<>();
-                itemStack.add(new ItemStack(4151, 2)); // 2x abyssal whip
-                itemStack.add(new ItemStack(4708, 10)); // 10x ahrim hood
-                itemStack.add(new ItemStack(28283, 1)); // 1x vestige
-
-                eventBus.post(new LootReceived("Test", 1, LootRecordType.UNKNOWN, itemStack, 0));
             }
             isAutoClogRetrieval = false;
         }
