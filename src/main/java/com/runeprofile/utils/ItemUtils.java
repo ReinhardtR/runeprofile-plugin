@@ -25,7 +25,9 @@ public class ItemUtils {
         NOXIOUS_POINT(29790, 10_000_000),
         NOXIOUS_BLADE(29792, 10_000_000),
         NOXIOUS_POMMEL(29794, 10_000_000),
-        ARAXYTE_FANG(29799, 50_000_000);
+        ARAXYTE_FANG(29799, 50_000_000),
+
+        MOKHAIOTL_CLOTH(31109, 75_000_000);
 
         private final int itemId;
         private final int value;
