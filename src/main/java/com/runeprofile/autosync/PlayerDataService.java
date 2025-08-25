@@ -129,7 +129,7 @@ public class PlayerDataService {
         if (!config.includeClanData()) return new PlayerClanData("", -1, -1, "");
 
         ClanSettings clanSettings = client.getClanSettings();
-        if (clanSettings == null) return null;
+        if (clanSettings == null) return new PlayerClanData("", -1, -1, ""); // not in a clan
 
         ClanMember member = clanSettings.findMember(player.getName());
         if (member == null) return null;
