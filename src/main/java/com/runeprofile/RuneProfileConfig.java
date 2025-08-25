@@ -47,10 +47,21 @@ public interface RuneProfileConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "enableExtendedItemNames",
+            name = "Show item names for !log",
+            description = "Show item names next to their icons in the collection log command.",
+            position = 5
+    )
+    default boolean enableExtendedItemNames()
+    {
+        return false;
+    }
+
+    @ConfigItem(
             keyName = "show_clog_sync_button",
             name = "Enable RuneProfile Sync button",
             description = "Shows the RuneProfile button in the Collection Log menu.",
-            position = 5
+            position = 6
     )
     default boolean showClogSyncButton() {
         return true;
@@ -60,7 +71,7 @@ public interface RuneProfileConfig extends Config {
             keyName = "menu_lookup_option",
             name = "Chat menu option",
             description = "Add RuneProfile option to chat menus",
-            position = 6
+            position = 7
     )
     default boolean showMenuLookupOption() {
         return false;
