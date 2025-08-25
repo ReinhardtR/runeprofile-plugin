@@ -38,7 +38,7 @@ public class AutoSyncScheduler {
     private ScheduledFuture<?> autoSyncFuture;
 
     private static final int RAPID_SYNC_SECONDS = 3;
-    private static final int AUTO_SYNC_MINUTES = 15;
+    private static final int AUTO_SYNC_MINUTES = 60;
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isEnabled() {
