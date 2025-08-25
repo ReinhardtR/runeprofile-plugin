@@ -113,7 +113,13 @@ public class CollectionLogCommand {
                 for (CollectionLogItem item : items) {
                     if (item.getQuantity() < 1) continue;
 
+                    String itemName = itemManager.getItemComposition(item.getId()).getName();
                     String itemString = "<img=" + loadedItemIcons.get(item.getId()) + ">";
+
+                    if (config.enableExtendedItemNames()) {
+                        itemString += " " + itemName + " ";
+                    }
+
                     if (item.getQuantity() > 1) {
                         itemString += "x" + item.getQuantity();
                     }
