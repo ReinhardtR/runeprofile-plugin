@@ -39,7 +39,7 @@ public class PlayerDataService {
     private final Map<Integer, Integer> clogItems = new HashMap<>();
 
     public void reset() {
-        clogItems.clear();
+        clearItems();
     }
 
     @Subscribe
@@ -53,6 +53,10 @@ public class PlayerDataService {
     public void storeItem(int itemId, int quantity) {
         if (quantity <= 0) return;
         clogItems.put(itemId, quantity);
+    }
+
+    public void clearItems() {
+        clogItems.clear();
     }
 
     public CompletableFuture<String> getAccountIdAsync() {
@@ -120,6 +124,7 @@ public class PlayerDataService {
             // items
             playerData.setItems(clogItems);
 
+            log.debug("Player Data: {}", playerData);
             playerDataFuture.complete(playerData);
         });
         return playerDataFuture;

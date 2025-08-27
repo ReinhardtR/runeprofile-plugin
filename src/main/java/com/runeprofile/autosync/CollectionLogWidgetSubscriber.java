@@ -101,18 +101,33 @@ public class CollectionLogWidgetSubscriber {
     public void onScriptPostFired(ScriptPostFired scriptPostFired) {
         final int COLLECTION_LOG_SETUP = 7797;
         if (scriptPostFired.getScriptId() == COLLECTION_LOG_SETUP) {
+            // disallow updating from the adventure log, to avoid players updating their profile
+            // while viewing other players collection logs using the POH adventure log.
+            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+            if (isOpenedFromAdventureLog) {
+                playerDataService.clearItems();
+                return;
+            }
+
             if (isAutoClogRetrieval) {
                 return;
             }
 
-            // disallow updating from the adventure log, to avoid players updating their profile
-            // while viewing other players collection logs using the POH adventure log.
-            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
-            if (isOpenedFromAdventureLog) return;
-
             isAutoClogRetrieval = true;
             client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
             client.runScript(2240);
+        }
+    }
+
+    // fail-safe to clear stored items if the collection log is opened from the adventure log
+    @Subscribe
+    public void onVarbitChanged(VarbitChanged varbitChanged) {
+        if (varbitChanged.getVarbitId() == VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) {
+            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+            if (isOpenedFromAdventureLog) {
+                log.debug("Collection log opened from adventure log, clearing stored items to avoid incorrect updates.");
+                playerDataService.clearItems();
+            }
         }
     }
 }
