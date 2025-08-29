@@ -162,7 +162,7 @@ public class CollectionLogCommand {
     }
 
     private void updateChatMessage(ChatMessage chatMessage, String message) {
-        chatMessage.getMessageNode().setValue(message);
+        chatMessage.getMessageNode().setRuneLiteFormatMessage(message);
         client.runScript(ScriptID.BUILD_CHATBOX);
     }
 }
