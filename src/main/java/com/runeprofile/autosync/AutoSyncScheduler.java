@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Singleton
@@ -37,38 +38,36 @@ public class AutoSyncScheduler {
     // A reference to the pending auto-sync task
     private ScheduledFuture<?> autoSyncFuture;
 
+    // Prevent multiple sync executions from overlapping
+    private final AtomicBoolean isSyncing = new AtomicBoolean(false);
+
     private static final int RAPID_SYNC_SECONDS = 3;
     private static final int AUTO_SYNC_MINUTES = 60;
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isEnabled() {
         return config.autosyncProfile();
     }
 
     public void startUp() {
         eventBus.register(this);
-
-        if (!isEnabled()) {
-            return;
+        if (isEnabled()) {
+            resetAutoSyncTimer();
         }
-
-        start();
     }
 
     public void shutDown() {
         eventBus.unregister(this);
-
-        stop();
+        cancelScheduledSync();
     }
 
     @Subscribe
     public void onConfigChanged(ConfigChanged event) {
         if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP)) return;
 
-        if (config.autosyncProfile()) {
-            start();
+        if (isEnabled()) {
+            resetAutoSyncTimer();
         } else {
-            stop();
+            cancelScheduledSync();
         }
     }
 
@@ -79,41 +78,78 @@ public class AutoSyncScheduler {
         // Update on logout
         if (event.getGameState() == GameState.LOGIN_SCREEN && client.getLocalPlayer() != null) {
             log.debug("Updating profile on logout...");
-            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(true));
+            performSync();
+        }
+
+        if (event.getGameState() != GameState.LOGGED_IN) {
+            log.debug("Player not logged in, cancelling scheduled sync.");
+            cancelScheduledSync();
+        } else if (event.getGameState() == GameState.LOGGED_IN) {
+            log.debug("Player logged in, resetting auto-sync timer.");
+            resetAutoSyncTimer();
         }
     }
 
-    public synchronized void resetAutoSyncTimer() {
-        if (autoSyncFuture != null) {
-            autoSyncFuture.cancel(false);
-        }
 
-        log.debug("Auto-sync timer reset. Next sync in {} minutes.", AUTO_SYNC_MINUTES);
-        autoSyncFuture = scheduledExecutorService.schedule(this::syncAndResetTimer, AUTO_SYNC_MINUTES, TimeUnit.MINUTES);
-    }
-
+    /**
+     * Called when a rapid sync is requested.
+     * Cancels any existing scheduled sync and schedules a sync after 3 seconds.
+     */
     public synchronized void startRapidSync() {
         log.debug("Starting rapid sync...");
-        resetAutoSyncTimer();
-        scheduledExecutorService.schedule(this::syncAndResetTimer, RAPID_SYNC_SECONDS, TimeUnit.SECONDS);
+        cancelScheduledSync();
+        // Schedule a sync in 3 seconds, then resume normal cycle
+        autoSyncFuture = scheduledExecutorService.schedule(() -> {
+            performSync();
+            scheduleNextSync();
+        }, RAPID_SYNC_SECONDS, TimeUnit.SECONDS);
     }
 
-    private synchronized void start() {
-        log.debug("Starting auto-sync scheduler...");
-        resetAutoSyncTimer();
+    /**
+     * Resets the auto-sync cycle.
+     */
+    public synchronized void resetAutoSyncTimer() {
+        if (!isEnabled()) {
+            log.debug("Auto-sync is disabled; ignoring reset request.");
+            return;
+        }
+
+        scheduleNextSync();
     }
 
-    private synchronized void stop() {
-        log.debug("Stopping auto-sync scheduler...");
+    /**
+     * Schedules the next sync after the specified delay.
+     */
+    private synchronized void scheduleNextSync() {
+        log.debug("Next sync scheduled in {} minutes", AUTO_SYNC_MINUTES);
+        cancelScheduledSync();
+        autoSyncFuture = scheduledExecutorService.schedule(() -> {
+            performSync();
+            scheduleNextSync();
+        }, AutoSyncScheduler.AUTO_SYNC_MINUTES, TimeUnit.MINUTES);
+    }
+
+    private synchronized void cancelScheduledSync() {
         if (autoSyncFuture != null) {
-            autoSyncFuture.cancel(true);
+            autoSyncFuture.cancel(false);
             autoSyncFuture = null;
         }
     }
 
-    private synchronized void syncAndResetTimer() {
+    /**
+     * Performs the actual sync, ensuring only one sync runs at a time.
+     */
+    private void performSync() {
+        if (!isSyncing.compareAndSet(false, true)) {
+            log.debug("Sync already in progress, skipping...");
+            return;
+        }
+
         log.debug("Syncing profile...");
-        resetAutoSyncTimer();
-        scheduledExecutorService.execute(() -> plugin.updateProfileAsync(true));
+        try {
+            plugin.updateProfileAsync(true);
+        } finally {
+            isSyncing.set(false);
+        }
     }
 }
