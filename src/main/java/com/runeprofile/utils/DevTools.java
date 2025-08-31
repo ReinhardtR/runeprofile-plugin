@@ -11,6 +11,7 @@ import net.runelite.client.hiscore.HiscoreSkill;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
@@ -75,7 +76,9 @@ public class DevTools {
         }
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            ImageIO.write(sprite, "png", baos);
+            synchronized (ImageIO.class) {
+                ImageIO.write(sprite, "png", baos);
+            }
             byte[] imageBytes = baos.toByteArray();
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             icons.put(key, base64Image);
