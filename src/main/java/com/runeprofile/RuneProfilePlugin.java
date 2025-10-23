@@ -10,6 +10,7 @@ import com.runeprofile.ui.ChatPlayerMenuOption;
 import com.runeprofile.ui.CollectionLogCommand;
 import com.runeprofile.ui.CollectionLogPageMenuOption;
 import com.runeprofile.ui.ManualUpdateButtonManager;
+import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.RuneProfileApiException;
 import com.runeprofile.utils.Utils;
 import lombok.Getter;
@@ -17,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.config.RuneScapeProfileType;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
@@ -85,6 +85,8 @@ public class RuneProfilePlugin extends Plugin {
         this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         runeProfilePanel.startUp();
 
+        playerDataService.startUp();
+
         autoSyncScheduler.startUp();
         valuableDropSubscriber.startUp();
         collectionLogWidgetSubscriber.startUp();
@@ -100,6 +102,8 @@ public class RuneProfilePlugin extends Plugin {
     protected void shutDown() {
         runeProfilePanel.shutDown();
 
+        playerDataService.shutDown();
+
         autoSyncScheduler.shutDown();
         valuableDropSubscriber.shutDown();
         collectionLogWidgetSubscriber.shutDown();
@@ -112,7 +116,13 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     public void updateProfileAsync(boolean isAutoSync) {
-        if (!isValidPlayerState()) {
+        if (!PlayerState.isValidPlayerState(client)) {
+            if (!isAutoSync) {
+                clientThread.invokeLater(() -> {
+                    client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "You are not allowed to update your profile on this world.", "RuneProfile");
+                });
+            }
+
             throw new IllegalStateException("Invalid player state");
         }
 
@@ -123,7 +133,7 @@ public class RuneProfilePlugin extends Plugin {
 
         playerDataService.getPlayerDataAsync().thenCompose((data) -> {
                     // sanity check: a player reported syncs going through on invalid worlds
-                    if (!isValidPlayerState()) {
+                    if (!PlayerState.isValidPlayerState(client)) {
                         throw new IllegalStateException("Invalid player state after fetching player data");
                     }
                     return runeProfileApiClient.updateProfileAsync(data);
@@ -154,7 +164,7 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     public void updateModelAsync() {
-        if (!isValidPlayerState()) {
+        if (!PlayerState.isValidPlayerState(client)) {
             throw new IllegalStateException("Invalid player state");
         }
 
@@ -179,7 +189,7 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     public void addActivitiesAsync(List<? extends Activity<? extends ActivityData>> activities) {
-        if (!isValidPlayerState()) {
+        if (!PlayerState.isValidPlayerState(client)) {
             throw new IllegalStateException("Invalid player state");
         }
 
@@ -198,26 +208,4 @@ public class RuneProfilePlugin extends Plugin {
         });
     }
 
-    public boolean isValidPlayerState() {
-        long accountHash = client.getAccountHash();
-        if (accountHash == -1) {
-            log.debug("Invalid account hash: {}", accountHash);
-            return false;
-        }
-
-        Player player = client.getLocalPlayer();
-        if (player == null || player.getName() == null) {
-            log.debug("Invalid player");
-            return false;
-        }
-
-        RuneScapeProfileType profileType = RuneScapeProfileType.getCurrent(client);
-        boolean isValidProfileType = profileType.equals(RuneScapeProfileType.STANDARD);
-        if (!isValidProfileType) {
-            log.debug("Invalid profile type: {}", profileType);
-            return false;
-        }
-
-        return true;
-    }
 }

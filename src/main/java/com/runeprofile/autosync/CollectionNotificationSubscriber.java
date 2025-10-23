@@ -1,8 +1,8 @@
 package com.runeprofile.autosync;
 
 import com.runeprofile.RuneProfileConfig;
-import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.utils.ItemSearcher;
+import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -40,9 +40,6 @@ public class CollectionNotificationSubscriber {
     @Inject
     private ItemSearcher itemSearcher;
 
-    @Inject
-    private RuneProfilePlugin plugin;
-
     private static final Pattern NEW_ITEM_REGEX = Pattern.compile("New item added to your collection log: (?<itemName>(.*))");
     private static final int POPUP_PREFIX_LENGTH = "New item:".length();
 
@@ -50,7 +47,7 @@ public class CollectionNotificationSubscriber {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
-        return config.autosyncProfile() && plugin.isValidPlayerState();
+        return config.autosyncProfile() && PlayerState.isValidPlayerState(client);
     }
 
     public void startUp() {

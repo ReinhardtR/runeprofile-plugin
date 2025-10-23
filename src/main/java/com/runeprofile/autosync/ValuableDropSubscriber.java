@@ -4,7 +4,9 @@ import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.data.activities.ValuableDropActivity;
 import com.runeprofile.utils.ItemUtils;
+import com.runeprofile.utils.PlayerState;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -30,6 +32,9 @@ public class ValuableDropSubscriber {
     private ScheduledExecutorService scheduledExecutorService;
 
     @Inject
+    private Client client;
+
+    @Inject
     private ItemManager itemManager;
 
     @Inject
@@ -40,7 +45,7 @@ public class ValuableDropSubscriber {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
-        return config.autosyncProfile() && config.trackValuableDrops() && plugin.isValidPlayerState();
+        return config.autosyncProfile() && config.trackValuableDrops() && PlayerState.isValidPlayerState(client);
     }
 
     public void startUp() {

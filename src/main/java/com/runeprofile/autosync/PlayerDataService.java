@@ -13,6 +13,7 @@ import net.runelite.api.clan.ClanTitle;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
@@ -26,6 +27,9 @@ import java.util.concurrent.CompletableFuture;
 @Singleton
 public class PlayerDataService {
     @Inject
+    private EventBus eventBus;
+
+    @Inject
     private Client client;
 
     @Inject
@@ -38,6 +42,14 @@ public class PlayerDataService {
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
     private final Map<Integer, Integer> clogItems = new HashMap<>();
 
+    public void startUp() {
+        eventBus.register(this);
+    }
+
+    public void shutDown() {
+        eventBus.unregister(this);
+    }
+
     public void reset() {
         clearItems();
     }
@@ -46,6 +58,7 @@ public class PlayerDataService {
     public void onGameStateChanged(GameStateChanged gameStateChanged) {
         GameState gameState = gameStateChanged.getGameState();
         if (gameState != GameState.LOGGED_IN) {
+            log.debug("Game state changed to {}, resetting player data service", gameState);
             reset();
         }
     }
