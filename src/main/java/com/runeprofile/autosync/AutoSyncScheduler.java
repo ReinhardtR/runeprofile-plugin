@@ -75,12 +75,6 @@ public class AutoSyncScheduler {
     public void onGameStateChanged(GameStateChanged event) {
         if (!isEnabled()) return;
 
-        // Update on logout
-        if (event.getGameState() == GameState.LOGIN_SCREEN && client.getLocalPlayer() != null) {
-            log.debug("Updating profile on logout...");
-            performSync();
-        }
-
         if (event.getGameState() != GameState.LOGGED_IN) {
             log.debug("Player not logged in, cancelling scheduled sync.");
             cancelScheduledSync();
@@ -89,7 +83,6 @@ public class AutoSyncScheduler {
             resetAutoSyncTimer();
         }
     }
-
 
     /**
      * Called when a rapid sync is requested.
