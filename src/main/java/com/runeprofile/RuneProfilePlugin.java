@@ -163,6 +163,31 @@ public class RuneProfilePlugin extends Plugin {
                 });
     }
 
+    public void deleteProfileAsync() {
+        if (!PlayerState.isValidPlayerState(client)) {
+            throw new IllegalStateException("Invalid player state");
+        }
+
+        playerDataService.getAccountIdAsync().thenCompose((accountId) -> runeProfileApiClient.deleteProfileAsync(accountId))
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Error deleting profile", ex);
+
+                        final String errorMessage = Utils.getApiErrorMessage(ex, "Failed to delete your profile.");
+
+                        clientThread.invokeLater(() -> {
+                            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", errorMessage, "RuneProfile");
+                        });
+
+                        throw new RuneProfileApiException(errorMessage);
+                    }
+
+                    clientThread.invokeLater(() -> {
+                        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your profile has been deleted!", "RuneProfile");
+                    });
+                });
+    }
+
     public void updateModelAsync() {
         if (!PlayerState.isValidPlayerState(client)) {
             throw new IllegalStateException("Invalid player state");

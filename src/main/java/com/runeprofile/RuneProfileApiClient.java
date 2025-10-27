@@ -140,6 +140,12 @@ public class RuneProfileApiClient {
                 .thenApply((response) -> handleResponse(response, null));
     }
 
+    public CompletableFuture<Void> deleteProfileAsync(String accountHash) {
+        HttpUrl url = buildApiUrl("profiles", accountHash);
+        return deleteHttpRequestAsync(url)
+                .thenApply((response) -> handleResponse(response, null));
+    }
+
     public CompletableFuture<Void> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 

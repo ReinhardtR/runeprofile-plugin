@@ -29,8 +29,22 @@ public class MainButtonsPanel extends JPanel {
             if (username == null) return;
             Utils.openProfileInBrowser(username);
         });
-
         wrapper.add(openProfileButton);
+
+        // Delete Profile
+        JButton deleteProfileButton = createButton("Delete Profile");
+        deleteProfileButton.addActionListener(e -> {
+            final int confirmed = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to delete your profile? All activity history will be lost.\nOBS: Your profile will be re-created on next autosync or manual update.",
+                    "Confirm Profile Deletion",
+                    JOptionPane.YES_NO_OPTION
+            );
+            if (confirmed == JOptionPane.YES_OPTION) {
+                plugin.deleteProfileAsync();
+            }
+        });
+        wrapper.add(deleteProfileButton);
 
         if (plugin.isDeveloperMode()) {
             // DEV ONLY - generate hiscores icons
