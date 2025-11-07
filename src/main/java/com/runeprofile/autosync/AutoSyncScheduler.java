@@ -3,7 +3,6 @@ package com.runeprofile.autosync;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.eventbus.EventBus;
@@ -27,9 +26,6 @@ public class AutoSyncScheduler {
     private ScheduledExecutorService scheduledExecutorService;
 
     @Inject
-    private Client client;
-
-    @Inject
     private RuneProfilePlugin plugin;
 
     @Inject
@@ -40,6 +36,10 @@ public class AutoSyncScheduler {
 
     // Prevent multiple sync executions from overlapping
     private final AtomicBoolean isSyncing = new AtomicBoolean(false);
+
+    // Store remaining time when paused on logout (in milliseconds)
+    private static final TimeUnit PAUSE_TIME_UNIT = TimeUnit.SECONDS;
+    private long remainingSyncPause = 0;
 
     private static final int RAPID_SYNC_SECONDS = 3;
     private static final int AUTO_SYNC_MINUTES = 60;
@@ -76,11 +76,19 @@ public class AutoSyncScheduler {
         if (!isEnabled()) return;
 
         if (event.getGameState() != GameState.LOGGED_IN) {
-            log.debug("Player not logged in, cancelling scheduled sync.");
-            cancelScheduledSync();
+            if (autoSyncFuture != null) {
+                long remainingTime = autoSyncFuture.getDelay(PAUSE_TIME_UNIT);
+                cancelScheduledSync();
+                remainingSyncPause = remainingTime;
+                log.debug("Player logged out, pausing sync timer. {} {} remaining.", remainingSyncPause, PAUSE_TIME_UNIT.toString().toLowerCase());
+            }
         } else if (event.getGameState() == GameState.LOGGED_IN) {
-            log.debug("Player logged in, resetting auto-sync timer.");
-            resetAutoSyncTimer();
+            if (remainingSyncPause > 0) {
+                log.debug("Resuming sync with {} {} remaining.", remainingSyncPause, PAUSE_TIME_UNIT.toString().toLowerCase());
+                scheduleSyncWithDelay(remainingSyncPause, PAUSE_TIME_UNIT);
+            } else {
+                resetAutoSyncTimer();
+            }
         }
     }
 
@@ -111,7 +119,7 @@ public class AutoSyncScheduler {
     }
 
     /**
-     * Schedules the next sync after the specified delay.
+     * Schedules the next sync after the configured auto-sync interval.
      */
     private synchronized void scheduleNextSync() {
         log.debug("Next sync scheduled in {} minutes", AUTO_SYNC_MINUTES);
@@ -122,11 +130,29 @@ public class AutoSyncScheduler {
         }, AutoSyncScheduler.AUTO_SYNC_MINUTES, TimeUnit.MINUTES);
     }
 
+    /**
+     * Schedules a sync after a specific delay.
+     * Any existing future or pause state is cancelled.
+     *
+     * @param delay The amount of time to wait before syncing, in nanoseconds.
+     */
+    private synchronized void scheduleSyncWithDelay(long delay, TimeUnit unit) {
+        cancelScheduledSync();
+        autoSyncFuture = scheduledExecutorService.schedule(() -> {
+            performSync();
+            scheduleNextSync();
+        }, delay, unit);
+    }
+
+    /**
+     * Cancels any scheduled sync and clears the pause state.
+     */
     private synchronized void cancelScheduledSync() {
         if (autoSyncFuture != null) {
             autoSyncFuture.cancel(false);
             autoSyncFuture = null;
         }
+        remainingSyncPause = 0;
     }
 
     /**
