@@ -10,11 +10,11 @@ import net.runelite.api.clan.ClanMember;
 import net.runelite.api.clan.ClanRank;
 import net.runelite.api.clan.ClanSettings;
 import net.runelite.api.clan.ClanTitle;
-import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.RuneScapeProfileChanged;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -55,12 +55,9 @@ public class PlayerDataService {
     }
 
     @Subscribe
-    public void onGameStateChanged(GameStateChanged gameStateChanged) {
-        GameState gameState = gameStateChanged.getGameState();
-        if (gameState != GameState.LOGGED_IN) {
-            log.debug("Game state changed to {}, resetting player data service", gameState);
-            reset();
-        }
+    public void onRuneScapeProfileChanged(RuneScapeProfileChanged event) {
+        log.debug("RuneScape Profile changed to {}, resetting player data service", event.getNewProfile());
+        reset();
     }
 
     public void storeItem(int itemId, int quantity) {
