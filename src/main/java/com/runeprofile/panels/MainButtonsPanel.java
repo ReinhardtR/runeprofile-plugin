@@ -60,6 +60,13 @@ public class MainButtonsPanel extends JPanel {
                 devTools.generateClanRankIconsJson();
             });
             wrapper.add(generateClanRankIcons);
+
+            // DEV ONLY - generate item icons
+            JButton generateItemIcons = createButton("DEV: Item Icons");
+            generateItemIcons.addActionListener(e -> {
+                devTools.generateItemIconsJson();
+            });
+            wrapper.add(generateItemIcons);
         }
 
         add(wrapper, BorderLayout.NORTH);
