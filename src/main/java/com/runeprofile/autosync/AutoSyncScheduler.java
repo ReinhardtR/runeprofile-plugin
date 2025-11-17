@@ -49,6 +49,7 @@ public class AutoSyncScheduler {
     }
 
     public void startUp() {
+        log.debug("Auto sync scheduler starting up...");
         eventBus.register(this);
         if (isEnabled()) {
             resetAutoSyncTimer();
@@ -56,6 +57,7 @@ public class AutoSyncScheduler {
     }
 
     public void shutDown() {
+        log.debug("Auto sync scheduler shutting down...");
         eventBus.unregister(this);
         cancelScheduledSync();
     }
