@@ -57,6 +57,10 @@ public class DevTools {
         put(30803, 30805); // Dossier
     }};
 
+    private final static Map<Integer, Integer> specialItemQuantityMap = new HashMap<Integer, Integer>() {{
+        put(31235, 1); // Gryphon feather
+    }};
+
     public void generateHiscoreIconsJson() {
         clientThread.invokeLater(() -> {
             Map<String, String> icons = new HashMap<>();
@@ -105,7 +109,8 @@ public class DevTools {
                     int[] clogItems = client.getEnum(subtabStruct.getIntValue(690)).getIntVals();
                     for (int clogItemId : clogItems) {
                         final int itemid = itemDummyMap.getOrDefault(clogItemId, clogItemId);
-                        final BufferedImage sprite = itemManager.getImage(itemid, 10000, false);
+                        final int quantity = specialItemQuantityMap.getOrDefault(itemid, 10000);
+                        final BufferedImage sprite = itemManager.getImage(itemid, quantity, false);
                         writeBase64Sprite(sprite, Integer.toString(itemid), icons);
                     }
                 }
