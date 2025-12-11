@@ -1,5 +1,6 @@
 package com.runeprofile.autosync;
 
+import com.google.common.collect.ImmutableSet;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.utils.ItemSearcher;
 import com.runeprofile.utils.PlayerState;
@@ -15,6 +16,7 @@ import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +46,9 @@ public class CollectionNotificationSubscriber {
     private static final int POPUP_PREFIX_LENGTH = "New item:".length();
 
     private final AtomicBoolean popupStarted = new AtomicBoolean(false);
+
+    // Items that can't be synced via collection log notifications because of non-unique names
+    private final static Set<String> IGNORED_ITEMS = ImmutableSet.of("Medallion fragment");
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
@@ -107,6 +112,11 @@ public class CollectionNotificationSubscriber {
     }
 
     private void handleAutosync(String itemName) {
+        if (IGNORED_ITEMS.contains(itemName)) {
+            log.debug("Ignoring collection log item with non-unique name: {}", itemName);
+            return;
+        }
+
         Integer itemId = itemSearcher.findItemId(itemName);
         if (itemId == null) {
             log.debug("Failed to find item ID for: {}", itemName);
