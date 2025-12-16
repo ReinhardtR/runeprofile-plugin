@@ -49,7 +49,7 @@ public class CollectionNotificationSubscriber {
     private final AtomicBoolean popupStarted = new AtomicBoolean(false);
 
     // Items that can't be synced via collection log notifications because of non-unique names
-    private final static Set<String> IGNORED_ITEMS = ImmutableSet.of("Medallion fragment");
+    private final static Set<String> IGNORED_ITEMS = ImmutableSet.of("Medallion fragment", "Ancient page");
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
