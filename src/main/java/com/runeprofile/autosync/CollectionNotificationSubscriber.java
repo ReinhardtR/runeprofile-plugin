@@ -10,6 +10,7 @@ import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -101,9 +102,9 @@ public class CollectionNotificationSubscriber {
         if (scriptId == ScriptID.NOTIFICATION_START) {
             popupStarted.set(true);
         } else if (scriptId == ScriptID.NOTIFICATION_DELAY) {
-            String topText = client.getVarcStrValue(VarClientStr.NOTIFICATION_TOP_TEXT);
+            String topText = client.getVarcStrValue(VarClientID.NOTIFICATION_TITLE);
             if (popupStarted.getAndSet(false) && "Collection log".equalsIgnoreCase(topText) && isEnabled()) {
-                String bottomText = Utils.sanitize(client.getVarcStrValue(VarClientStr.NOTIFICATION_BOTTOM_TEXT));
+                String bottomText = Utils.sanitize(client.getVarcStrValue(VarClientID.NOTIFICATION_MAIN));
                 String itemName = bottomText.substring(POPUP_PREFIX_LENGTH).trim();
                 handleAutosync(itemName);
                 log.debug("Script fired for new item: {}", itemName);
