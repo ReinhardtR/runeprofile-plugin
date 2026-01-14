@@ -87,6 +87,13 @@ public class CollectionLogWidgetSubscriber {
     @Subscribe
     public void onScriptPreFired(ScriptPreFired preFired) {
         if (preFired.getScriptId() == 4100) {
+            // prevent reacting to scripts fired when opened from adventure log
+            // e.g. other plugins might fire the collection log script when viewing other players' collection logs
+            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+            if (isOpenedFromAdventureLog) {
+                return;
+            }
+
             tickCollectionLogScriptFired = client.getTickCount();
 
             Object[] args = preFired.getScriptEvent().getArguments();
