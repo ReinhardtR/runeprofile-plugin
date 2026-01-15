@@ -47,10 +47,21 @@ public interface RuneProfileConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "show_suggestion_overlay",
+            name = "Show Suggestion Overlay",
+            description = "Displays a list of potential commands in an overlay while you're typing a chat message.",
+            position = 5
+	)
+	default boolean showSuggestionOverlay()
+	{
+		return true;
+	}
+
+    @ConfigItem(
             keyName = "enableExtendedItemNames",
             name = "Show item names for !log",
             description = "Show item names next to their icons in the collection log command.",
-            position = 5
+            position = 6
     )
     default boolean enableExtendedItemNames()
     {
@@ -61,7 +72,7 @@ public interface RuneProfileConfig extends Config {
             keyName = "show_clog_sync_button",
             name = "Enable RuneProfile Sync button",
             description = "Shows the RuneProfile button in the Collection Log menu.",
-            position = 6
+            position = 7
     )
     default boolean showClogSyncButton() {
         return true;
@@ -71,7 +82,7 @@ public interface RuneProfileConfig extends Config {
             keyName = "menu_lookup_option",
             name = "Chat menu option",
             description = "Add RuneProfile option to chat menus",
-            position = 7
+            position = 8
     )
     default boolean showMenuLookupOption() {
         return false;
@@ -81,7 +92,7 @@ public interface RuneProfileConfig extends Config {
             keyName = "show_side_panel",
             name = "Show the RuneProfile side panel",
             description = "Adds RuneProfile to the RuneLite plugin side bar.",
-            position = 7
+            position = 9
     )
     default boolean showSidePanel() {
         return true;
