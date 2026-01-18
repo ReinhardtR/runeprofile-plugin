@@ -49,7 +49,27 @@ public class CollectionNotificationSubscriber {
     private final AtomicBoolean popupStarted = new AtomicBoolean(false);
 
     // Items that can't be synced via collection log notifications because of non-unique names
-    private final static Set<String> IGNORED_ITEMS = ImmutableSet.of("Medallion fragment", "Ancient page");
+    private final static Set<String> IGNORED_ITEMS = ImmutableSet.of(
+            "Chompy bird hat",
+            "Decorative sword",
+            "Decorative armour",
+            "Decorative helm",
+            "Decorative shield",
+            "Castlewars hood",
+            "Castlewars cloak",
+            "Rum",
+            "Ancient page",
+            "Graceful hood",
+            "Graceful cape",
+            "Graceful top",
+            "Graceful legs",
+            "Graceful gloves",
+            "Graceful boots",
+            "Mysterious page",
+            "Decorative boots",
+            "Decorative full helm",
+            "Medallion fragment"
+    );
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
