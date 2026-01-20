@@ -6,11 +6,7 @@ import com.runeprofile.autosync.*;
 import com.runeprofile.data.AddActivities;
 import com.runeprofile.data.activities.Activity;
 import com.runeprofile.data.activities.ActivityData;
-import com.runeprofile.ui.ChatPlayerMenuOption;
-import com.runeprofile.ui.CollectionLogCommand;
-import com.runeprofile.ui.CollectionLogPageMenuOption;
-import com.runeprofile.ui.CommandSuggestionOverlay;
-import com.runeprofile.ui.ManualUpdateButtonManager;
+import com.runeprofile.ui.*;
 import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.RuneProfileApiException;
 import com.runeprofile.utils.Utils;
@@ -72,6 +68,9 @@ public class RuneProfilePlugin extends Plugin {
     private CollectionLogPageMenuOption collectionLogPageMenuOption;
 
     @Inject
+    private PlayerMenuOption playerMenuOption;
+
+    @Inject
     private ChatPlayerMenuOption chatPlayerMenuOption;
 
     @Inject
@@ -102,6 +101,7 @@ public class RuneProfilePlugin extends Plugin {
 
         manualUpdateButtonManager.startUp();
         collectionLogPageMenuOption.startUp();
+        playerMenuOption.startUp();
         chatPlayerMenuOption.startUp();
         collectionLogCommand.startUp();
         commandSuggestionOverlay.startUp();
@@ -121,6 +121,7 @@ public class RuneProfilePlugin extends Plugin {
 
         manualUpdateButtonManager.shutDown();
         collectionLogPageMenuOption.shutDown();
+        playerMenuOption.shutDown();
         chatPlayerMenuOption.shutDown();
         collectionLogCommand.shutDown();
         commandSuggestionOverlay.shutDown();
