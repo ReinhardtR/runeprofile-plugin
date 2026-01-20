@@ -6,10 +6,7 @@ import com.runeprofile.autosync.*;
 import com.runeprofile.data.AddActivities;
 import com.runeprofile.data.activities.Activity;
 import com.runeprofile.data.activities.ActivityData;
-import com.runeprofile.ui.ChatPlayerMenuOption;
-import com.runeprofile.ui.CollectionLogCommand;
-import com.runeprofile.ui.CollectionLogPageMenuOption;
-import com.runeprofile.ui.ManualUpdateButtonManager;
+import com.runeprofile.ui.*;
 import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.RuneProfileApiException;
 import com.runeprofile.utils.Utils;
@@ -53,6 +50,9 @@ public class RuneProfilePlugin extends Plugin {
     private AutoSyncScheduler autoSyncScheduler;
 
     @Inject
+    private ManifestService manifestService;
+
+    @Inject
     private CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
 
     @Inject
@@ -71,10 +71,16 @@ public class RuneProfilePlugin extends Plugin {
     private CollectionLogPageMenuOption collectionLogPageMenuOption;
 
     @Inject
+    private PlayerMenuOption playerMenuOption;
+
+    @Inject
     private ChatPlayerMenuOption chatPlayerMenuOption;
 
     @Inject
     private CollectionLogCommand collectionLogCommand;
+
+    @Inject
+    private CommandSuggestionOverlay commandSuggestionOverlay;
 
     private RuneProfilePanel runeProfilePanel;
 
@@ -88,6 +94,7 @@ public class RuneProfilePlugin extends Plugin {
         this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         runeProfilePanel.startUp();
 
+        manifestService.startUp();
         playerDataService.startUp();
 
         autoSyncScheduler.startUp();
@@ -98,15 +105,17 @@ public class RuneProfilePlugin extends Plugin {
 
         manualUpdateButtonManager.startUp();
         collectionLogPageMenuOption.startUp();
+        playerMenuOption.startUp();
         chatPlayerMenuOption.startUp();
         collectionLogCommand.startUp();
-
+        commandSuggestionOverlay.startUp();
     }
 
     @Override
     protected void shutDown() {
         runeProfilePanel.shutDown();
 
+        manifestService.shutDown();
         playerDataService.shutDown();
 
         autoSyncScheduler.shutDown();
@@ -117,8 +126,10 @@ public class RuneProfilePlugin extends Plugin {
 
         manualUpdateButtonManager.shutDown();
         collectionLogPageMenuOption.shutDown();
+        playerMenuOption.shutDown();
         chatPlayerMenuOption.shutDown();
         collectionLogCommand.shutDown();
+        commandSuggestionOverlay.shutDown();
     }
 
     public void updateProfileAsync(boolean isAutoSync) {
