@@ -59,6 +59,9 @@ public class RuneProfilePlugin extends Plugin {
     private CollectionNotificationSubscriber collectionNotificationSubscriber;
 
     @Inject
+    private RsnChangeSubscriber rsnChangeSubscriber;
+
+    @Inject
     private ValuableDropSubscriber valuableDropSubscriber;
 
     @Inject
@@ -91,11 +94,13 @@ public class RuneProfilePlugin extends Plugin {
         valuableDropSubscriber.startUp();
         collectionLogWidgetSubscriber.startUp();
         collectionNotificationSubscriber.startUp();
+        rsnChangeSubscriber.startUp();
 
         manualUpdateButtonManager.startUp();
         collectionLogPageMenuOption.startUp();
         chatPlayerMenuOption.startUp();
         collectionLogCommand.startUp();
+
     }
 
     @Override
@@ -108,6 +113,7 @@ public class RuneProfilePlugin extends Plugin {
         valuableDropSubscriber.shutDown();
         collectionLogWidgetSubscriber.shutDown();
         collectionNotificationSubscriber.shutDown();
+        rsnChangeSubscriber.shutDown();
 
         manualUpdateButtonManager.shutDown();
         collectionLogPageMenuOption.shutDown();
