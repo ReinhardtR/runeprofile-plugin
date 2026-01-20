@@ -195,4 +195,10 @@ public class RuneProfileApiClient {
         return postHttpRequestAsync(url, gson.toJson(data))
                 .thenApplyAsync((response) -> handleResponse(response, null));
     }
+
+    public CompletableFuture<Manifest> getManifest() {
+        HttpUrl url = buildApiUrl("manifest");
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response -> handleResponse(response, Manifest.class)));
+    }
 }

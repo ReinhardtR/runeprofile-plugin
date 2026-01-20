@@ -54,6 +54,9 @@ public class RuneProfilePlugin extends Plugin {
     private AutoSyncScheduler autoSyncScheduler;
 
     @Inject
+    private ManifestService manifestService;
+
+    @Inject
     private CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
 
     @Inject
@@ -89,6 +92,7 @@ public class RuneProfilePlugin extends Plugin {
         this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         runeProfilePanel.startUp();
 
+        manifestService.startUp();
         playerDataService.startUp();
 
         autoSyncScheduler.startUp();
@@ -107,6 +111,7 @@ public class RuneProfilePlugin extends Plugin {
     protected void shutDown() {
         runeProfilePanel.shutDown();
 
+        manifestService.shutDown();
         playerDataService.shutDown();
 
         autoSyncScheduler.shutDown();

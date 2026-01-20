@@ -2,21 +2,16 @@ package com.runeprofile.ui;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.runeprofile.RuneProfileConfig;
 
+import com.runeprofile.autosync.ManifestService;
+import com.runeprofile.data.Manifest;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.gameval.VarClientID;
@@ -29,22 +24,21 @@ import net.runelite.client.ui.overlay.components.LineComponent;
  * OverlayPanel that suggests commands and possible aliases as the user types a command into the chat.
  */
 @Slf4j
+@Singleton
 public class CommandSuggestionOverlay extends OverlayPanel {
-    private static final int MAX_SUGGESTIONS = 10; // Controls the number of suggestions shown, could use a config option if we want
-
-    @Inject
-    private Gson gson;
+    private static final int MAX_SUGGESTIONS = 5;
 
     @Inject
     private Client client;
 
     @Inject
+    private OverlayManager overlayManager;
+
+    @Inject
     private RuneProfileConfig config;
 
     @Inject
-    private OverlayManager overlayManager;
-
-    private Map<String, List<String>> commandAliases;
+    private ManifestService manifestService;
 
     @Inject
     public CommandSuggestionOverlay() {
@@ -53,7 +47,6 @@ public class CommandSuggestionOverlay extends OverlayPanel {
     }
 
     public void startUp() {
-        this.commandAliases = this.loadCommandAliases();
         this.overlayManager.add(this);
     }
 
@@ -63,7 +56,7 @@ public class CommandSuggestionOverlay extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!this.config.showSuggestionOverlay()) {
+        if (!this.config.commandSuggestionOverlay()) {
             return null;
         }
 
@@ -71,11 +64,9 @@ public class CommandSuggestionOverlay extends OverlayPanel {
             return null;
         }
 
-        
         String currentChatInput = this.client.getVarcStrValue(VarClientID.CHATINPUT);
 
         List<String> suggestions = this.getSuggestions(currentChatInput);
-
         if (suggestions.isEmpty()) {
             return null;
         }
@@ -84,43 +75,13 @@ public class CommandSuggestionOverlay extends OverlayPanel {
 
         // Reading the panel gets awkward when the text for a suggestion wraps to a new line
         // So we update the panel width to fit the longest suggestion
-        this.updatePanelWidth(graphics, suggestions); 
+        this.updatePanelWidth(graphics, suggestions);
 
-        for (int i = suggestions.size() - 1; i >= 0; i--) { // Reverse order to have nearest suggestions on the bottom
+        for (int i = suggestions.size() - 1; i >= 0; i--) { // Reverse order to have the nearest suggestions on the bottom
             this.addSuggestionToOverlay(suggestions.get(i), searchTermForHighlight);
         }
 
         return super.render(graphics);
-    }
-
-    // Loads the command aliases from the JSON file in the resources
-    private Map<String, List<String>> loadCommandAliases() {
-        try (InputStream inputStream = this.getClass().getResourceAsStream("/command-aliases.json")) {
-            if (inputStream == null) {
-                return Collections.emptyMap();
-            }
-
-            InputStreamReader reader = new InputStreamReader(inputStream);
-            JsonObject jsonObject = this.gson.fromJson(reader, JsonObject.class);
-
-            Map<String, List<String>> result = new HashMap<>();
-
-            for (String key : jsonObject.keySet()) {
-                JsonArray array = jsonObject.getAsJsonArray(key);
-                List<String> aliases = new ArrayList<>();
-
-                for (JsonElement element : array) {
-                    aliases.add(element.getAsString());
-                }
-
-                result.put(key, aliases);
-            }
-
-            return result;
-        } catch (Exception e) {
-            log.error("Failed to load command aliases", e);
-            return Collections.emptyMap();
-        }
     }
 
     // Returns a list of suggestions based on the current chat input
@@ -129,82 +90,57 @@ public class CommandSuggestionOverlay extends OverlayPanel {
             return new ArrayList<>();
         }
 
-        String lowerInput = input.toLowerCase().trim();
-
-        // Check if full command + space is typed in 
-        String matchedCommand = null;
-        for (String command : this.commandAliases.keySet()) {
-            if (lowerInput.startsWith(command.toLowerCase() + " ")) {
-                matchedCommand = command;
-                break;
-            }
-        }
-
-        if (matchedCommand != null && matchedCommand.equals("!log") && !this.config.enableLogCommand()) {
+        if (!this.config.enableLogCommand()) {
             return new ArrayList<>(); // No suggestions if !log command is disabled
         }
 
-        // If a full command + space is typed in, show aliases specific to that command
-        if (matchedCommand != null) {
-            return this.getAliasSuggestions(matchedCommand, input.substring(matchedCommand.length()).trim());
+        String lowerInput = input.toLowerCase().trim();
+        String command = "!log";
+
+        // Only show suggestions after "!log " is typed
+        if (lowerInput.startsWith(command.toLowerCase() + " ")) {
+            // Show page name/alias suggestions
+            return this.getPageSuggestions(input.substring(command.length()).trim());
         }
 
-        // Otherwise, show just the command suggestions
-        return this.getCommandSuggestions(lowerInput);
+        return new ArrayList<>();
     }
 
-    // Command = !log, !kc, etc.
-    private List<String> getCommandSuggestions(String searchTerm) {
-        List<String> matchingCommands = new ArrayList<>();
-
-        for (String command : this.commandAliases.keySet()) {
-
-            if (command.equals("!log") && !this.config.enableLogCommand()) {
-                continue; // Skip !log command if disabled
-            }
-
-            boolean commandMatches = command.toLowerCase().startsWith(searchTerm);
-            if (commandMatches) {
-                matchingCommands.add(command);
-            }
-        }
-
-        this.sortByRelevance(matchingCommands, searchTerm);
-
-        int limit = Math.min(matchingCommands.size(), MAX_SUGGESTIONS);
-        return matchingCommands.subList(0, limit);
-    }
-
-    // Alias = cerb, vork, etc.
-    private List<String> getAliasSuggestions(String command, String searchTerm) {
+    // Get page name and alias suggestions from manifest
+    private List<String> getPageSuggestions(String searchTerm) {
         String lowerSearch = searchTerm.toLowerCase();
 
-        List<String> aliases = this.commandAliases.get(command);
-
-        if (aliases == null || aliases.isEmpty()) {
+        Manifest manifest = manifestService.getManifest();
+        if (manifest == null || manifest.getPages() == null) {
             return new ArrayList<>();
         }
 
-        List<String> matchingAliases = new ArrayList<>();
+        List<String> matchingPages = new ArrayList<>();
 
-        for (String alias : aliases) {
-            boolean aliasMatches = alias.toLowerCase().contains(lowerSearch);
-            if (aliasMatches) {
-                matchingAliases.add(alias);
+        // Search through all page names and their aliases
+        for (Map.Entry<String, List<String>> entry : manifest.getPages().entrySet()) {
+            String pageName = entry.getKey();
+            List<String> aliases = entry.getValue();
+
+            // Check page name
+            if (pageName.toLowerCase().contains(lowerSearch)) {
+                matchingPages.add(pageName);
+            }
+
+            // Check aliases
+            if (aliases != null) {
+                for (String alias : aliases) {
+                    if (alias.toLowerCase().contains(lowerSearch) && !matchingPages.contains(alias)) {
+                        matchingPages.add(alias);
+                    }
+                }
             }
         }
 
-        this.sortByRelevance(matchingAliases, lowerSearch);
+        this.sortByRelevance(matchingPages, lowerSearch);
 
-        int limit = Math.min(matchingAliases.size(), MAX_SUGGESTIONS);
-        List<String> results = new ArrayList<>();
-
-        for (int i = 0; i < limit; i++) {
-            String alias = matchingAliases.get(i);
-            results.add(alias);
-        }
-
-        return results;
+        int limit = Math.min(matchingPages.size(), MAX_SUGGESTIONS);
+        return matchingPages.subList(0, limit);
     }
 
     private String getSearchTermForHighlight(String input) {
@@ -213,11 +149,10 @@ public class CommandSuggestionOverlay extends OverlayPanel {
         }
 
         String lowerInput = input.toLowerCase().trim();
+        String command = "!log";
 
-        for (String command : this.commandAliases.keySet()) {
-            if (lowerInput.startsWith(command.toLowerCase() + " ")) {
-                return input.substring(command.length()).trim();
-            }
+        if (lowerInput.startsWith(command.toLowerCase() + " ")) {
+            return input.substring(command.length()).trim();
         }
 
         return input.trim();
