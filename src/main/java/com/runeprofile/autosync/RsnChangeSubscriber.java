@@ -45,9 +45,11 @@ public class RsnChangeSubscriber {
         String prev = nameable.getPrevName();
 
         if (!isValidNameChange(prev, name)) {
+            log.debug("Ignoring invalid RSN change from '{}' to '{}'", prev, name);
             return;
         }
 
+        log.debug("Detected RSN change from '{}' to '{}', scheduling rapid sync", prev, name);
         autoSyncScheduler.startRapidSync();
     }
 }
