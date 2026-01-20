@@ -6,16 +6,14 @@ import com.runeprofile.modelexporter.ModelExporter;
 import com.runeprofile.utils.AccountHash;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.clan.ClanMember;
-import net.runelite.api.clan.ClanRank;
-import net.runelite.api.clan.ClanSettings;
-import net.runelite.api.clan.ClanTitle;
+import net.runelite.api.clan.*;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.RuneScapeProfileChanged;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
@@ -94,6 +92,9 @@ public class PlayerDataService {
             // clan
             playerData.setClan(getPlayerClanData(player));
 
+            // group
+            playerData.setGroupName(getPlayerGroupName());
+
             // skills
             for (Skill skill : Skill.values()) {
                 String name = skill.getName();
@@ -140,7 +141,7 @@ public class PlayerDataService {
         return playerDataFuture;
     }
 
-    public PlayerClanData getPlayerClanData(Player player) {
+    public @Nullable PlayerClanData getPlayerClanData(Player player) {
         if (!config.includeClanData()) return new PlayerClanData("", -1, -1, "");
 
         ClanSettings clanSettings = client.getClanSettings();
@@ -156,6 +157,12 @@ public class PlayerDataService {
         if (title == null) return null;
 
         return new PlayerClanData(clanSettings.getName(), rank.getRank(), title.getId(), title.getName());
+    }
+
+    public @Nullable String getPlayerGroupName() {
+        ClanSettings clanSettings = client.getClanSettings(ClanID.GROUP_IRONMAN);
+        if (clanSettings == null) return null;
+        return clanSettings.getName();
     }
 
     public CompletableFuture<PlayerModelData> getPlayerModelDataAsync() {

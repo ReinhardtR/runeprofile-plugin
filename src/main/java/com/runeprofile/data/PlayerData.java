@@ -17,6 +17,9 @@ public class PlayerData {
     @Nullable
     private PlayerClanData clan;
 
+    @Nullable
+    private String groupName;
+
     // skill name -> xp
     private Map<String, Integer> skills = new HashMap<>();
 
