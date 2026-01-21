@@ -73,7 +73,7 @@ public interface RuneProfileConfig extends Config {
             section = commandsSection
     )
     default boolean commandSuggestionOverlay() {
-        return true;
+        return false;
     }
 
     @ConfigItem(
