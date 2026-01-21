@@ -42,6 +42,7 @@ public class ManifestService {
 
     public void shutDown() {
         eventBus.unregister(this);
+        stopManifestRefreshTask();
     }
 
     public void reset() {
