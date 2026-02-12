@@ -75,8 +75,10 @@ public class ManifestService {
     }
 
     public void stopManifestRefreshTask() {
-        manifestRefreshFuture.cancel(true);
-        manifestRefreshFuture = null;
+        if (manifestRefreshFuture != null) {
+            manifestRefreshFuture.cancel(true);
+            manifestRefreshFuture = null;
+        }
     }
 
     public void refreshManifest() {
