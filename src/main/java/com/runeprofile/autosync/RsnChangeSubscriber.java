@@ -1,6 +1,8 @@
 package com.runeprofile.autosync;
 
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
+import net.runelite.api.Player;
 import net.runelite.api.Nameable;
 import net.runelite.api.events.NameableNameChanged;
 import net.runelite.client.eventbus.EventBus;
@@ -15,6 +17,9 @@ import javax.inject.Singleton;
 public class RsnChangeSubscriber {
     @Inject
     private EventBus eventBus;
+
+    @Inject
+    private Client client;
 
     @Inject
     private AutoSyncScheduler autoSyncScheduler;
@@ -40,6 +45,15 @@ public class RsnChangeSubscriber {
     @Subscribe
     public void onNameableNameChanged(NameableNameChanged nameableNameChanged) {
         final Nameable nameable = nameableNameChanged.getNameable();
+
+        if (!(nameable instanceof Player)) {
+            return;
+        }
+
+        Player localPlayer = client.getLocalPlayer();
+        if (localPlayer == null || nameable != localPlayer) {
+            return;
+        }
 
         String name = nameable.getName();
         String prev = nameable.getPrevName();
