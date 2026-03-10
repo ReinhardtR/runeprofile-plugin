@@ -50,6 +50,6 @@ public class RsnChangeSubscriber {
         }
 
         log.debug("Detected RSN change from '{}' to '{}', scheduling rapid sync", prev, name);
-        autoSyncScheduler.startRapidSync();
+        autoSyncScheduler.startRapidSync("rsn-change");
     }
 }

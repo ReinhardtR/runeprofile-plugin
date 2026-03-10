@@ -98,12 +98,12 @@ public class AutoSyncScheduler {
      * Called when a rapid sync is requested.
      * Cancels any existing scheduled sync and schedules a sync after 3 seconds.
      */
-    public synchronized void startRapidSync() {
+    public synchronized void startRapidSync(String eventSource) {
         log.debug("Starting rapid sync...");
         cancelScheduledSync();
         // Schedule a sync in 3 seconds, then resume normal cycle
         autoSyncFuture = scheduledExecutorService.schedule(() -> {
-            performSync();
+            performSync(eventSource);
             scheduleNextSync();
         }, RAPID_SYNC_SECONDS, TimeUnit.SECONDS);
     }
@@ -127,7 +127,7 @@ public class AutoSyncScheduler {
         log.debug("Next sync scheduled in {} minutes", AUTO_SYNC_MINUTES);
         cancelScheduledSync();
         autoSyncFuture = scheduledExecutorService.schedule(() -> {
-            performSync();
+            performSync("auto-sync-interval");
             scheduleNextSync();
         }, AutoSyncScheduler.AUTO_SYNC_MINUTES, TimeUnit.MINUTES);
     }
@@ -141,7 +141,7 @@ public class AutoSyncScheduler {
     private synchronized void scheduleSyncWithDelay(long delay, TimeUnit unit) {
         cancelScheduledSync();
         autoSyncFuture = scheduledExecutorService.schedule(() -> {
-            performSync();
+            performSync("auto-sync-resume");
             scheduleNextSync();
         }, delay, unit);
     }
@@ -160,7 +160,7 @@ public class AutoSyncScheduler {
     /**
      * Performs the actual sync, ensuring only one sync runs at a time.
      */
-    private void performSync() {
+    private void performSync(String eventSource) {
         if (!isSyncing.compareAndSet(false, true)) {
             log.debug("Sync already in progress, skipping...");
             return;
@@ -168,7 +168,7 @@ public class AutoSyncScheduler {
 
         log.debug("Syncing profile...");
         try {
-            plugin.updateProfileAsync(true);
+            plugin.updateProfileAsync(true, eventSource);
         } finally {
             isSyncing.set(false);
         }

@@ -74,7 +74,7 @@ public class CollectionLogWidgetSubscriber {
             tickCollectionLogScriptFired = -1;
             log.debug("Clog items script has fired, is manual sync: {}", isManualSync);
             if (isManualSync) {
-                scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false));
+                scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button-clog"));
                 isManualSync = false;
             }
             isAutoClogRetrieval = false;

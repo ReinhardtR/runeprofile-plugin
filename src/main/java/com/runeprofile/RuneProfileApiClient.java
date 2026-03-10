@@ -134,9 +134,13 @@ public class RuneProfileApiClient {
         }
     }
 
-    public CompletableFuture<Void> updateProfileAsync(PlayerData data) {
+    public CompletableFuture<Void> updateProfileAsync(PlayerData data, String eventSource) {
         HttpUrl url = buildApiUrl("profiles");
-        return postHttpRequestAsync(url, gson.toJson(data))
+
+        JsonObject payload = gson.toJsonTree(data).getAsJsonObject();
+        payload.addProperty("eventSource", eventSource);
+
+        return postHttpRequestAsync(url, gson.toJson(payload))
                 .thenApply((response) -> handleResponse(response, null));
     }
 

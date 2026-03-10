@@ -132,7 +132,7 @@ public class RuneProfilePlugin extends Plugin {
         commandSuggestionOverlay.shutDown();
     }
 
-    public void updateProfileAsync(boolean isAutoSync) {
+    public void updateProfileAsync(boolean isAutoSync, String eventSource) {
         if (!PlayerState.isValidPlayerState(client)) {
             if (!isAutoSync) {
                 clientThread.invokeLater(() -> {
@@ -153,7 +153,7 @@ public class RuneProfilePlugin extends Plugin {
                     if (!PlayerState.isValidPlayerState(client)) {
                         throw new IllegalStateException("Invalid player state after fetching player data");
                     }
-                    return runeProfileApiClient.updateProfileAsync(data);
+                    return runeProfileApiClient.updateProfileAsync(data, eventSource);
                 })
                 .whenComplete((result, ex) -> {
                     if (ex != null) {

@@ -90,7 +90,7 @@ public class ManualUpdateButtonManager {
         // since the script 4100 is never fired.
         int collectionCount = client.getVarpValue(VarPlayerID.COLLECTION_COUNT);
         if (collectionCount == 0) {
-            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false));
+            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button"));
         } else {
             collectionLogWidgetSubscriber.setManualSync(true);
             client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);

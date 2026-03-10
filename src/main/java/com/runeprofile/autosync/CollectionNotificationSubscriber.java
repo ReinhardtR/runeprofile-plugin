@@ -144,6 +144,6 @@ public class CollectionNotificationSubscriber {
             return;
         }
         playerDataService.storeItem(itemId, 1);
-        autoSyncScheduler.startRapidSync();
+        autoSyncScheduler.startRapidSync("collection-notification");
     }
 }
