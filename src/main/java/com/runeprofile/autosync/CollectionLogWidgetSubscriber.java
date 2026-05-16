@@ -121,7 +121,6 @@ public class CollectionLogWidgetSubscriber {
             }
 
             isAutoClogRetrieval = true;
-            client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
             client.runScript(2240);
         }
     }

@@ -93,7 +93,6 @@ public class ManualUpdateButtonManager {
             scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button"));
         } else {
             collectionLogWidgetSubscriber.setManualSync(true);
-            client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
             client.runScript(2240);
 
             client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your profile...", "RuneProfile");
