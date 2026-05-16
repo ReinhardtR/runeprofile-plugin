@@ -10,4 +10,5 @@ import java.util.Map;
 public class Manifest {
     final int version = -1;
     final Map<String, List<String>> pages = new HashMap<>();
+    final int[] combatAchievementVarps = new int[0];
 }
