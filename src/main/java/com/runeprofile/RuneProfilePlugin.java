@@ -65,6 +65,18 @@ public class RuneProfilePlugin extends Plugin {
     private ValuableDropSubscriber valuableDropSubscriber;
 
     @Inject
+    private SkillSubscriber skillSubscriber;
+
+    @Inject
+    private QuestCompletedSubscriber questCompletedSubscriber;
+
+    @Inject
+    private AchievementDiarySubscriber achievementDiarySubscriber;
+
+    @Inject
+    private CombatAchievementSubscriber combatAchievementSubscriber;
+
+    @Inject
     private ManualUpdateButtonManager manualUpdateButtonManager;
 
     @Inject
@@ -102,6 +114,10 @@ public class RuneProfilePlugin extends Plugin {
         collectionLogWidgetSubscriber.startUp();
         collectionNotificationSubscriber.startUp();
         rsnChangeSubscriber.startUp();
+        skillSubscriber.startUp();
+        questCompletedSubscriber.startUp();
+        achievementDiarySubscriber.startUp();
+        combatAchievementSubscriber.startUp();
 
         manualUpdateButtonManager.startUp();
         collectionLogPageMenuOption.startUp();
@@ -123,6 +139,10 @@ public class RuneProfilePlugin extends Plugin {
         collectionLogWidgetSubscriber.shutDown();
         collectionNotificationSubscriber.shutDown();
         rsnChangeSubscriber.shutDown();
+        skillSubscriber.shutDown();
+        questCompletedSubscriber.shutDown();
+        achievementDiarySubscriber.shutDown();
+        combatAchievementSubscriber.shutDown();
 
         manualUpdateButtonManager.shutDown();
         collectionLogPageMenuOption.shutDown();
