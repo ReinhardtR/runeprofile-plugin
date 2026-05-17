@@ -31,6 +31,28 @@ The plugin is needed to upload your in-game data to RuneProfile, which will be d
 
 You can read more about how to use RuneProfile here: [runeprofile.com/info/guide](https://runeprofile.com/info/guide).
 
+
 <p align="center">
+<strong>Profile</strong>
 <img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-example.png" >
+</p>
+
+<p align="center">
+<strong>Combat Achievements - Tasks</strong>
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-ca-tasks-example.png" >
+</p>
+
+<p align="center">
+<strong>Combat Achievements - Bosses</strong>
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-ca-bosses-example.png" >
+</p>
+
+<p align="center">
+<strong>Clan</strong>
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/clan-example.png" >
+</p>
+
+<p align="center">
+<strong>Log Command</strong>
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/log-command-example.png" >
 </p>
