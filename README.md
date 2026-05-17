@@ -33,8 +33,8 @@ You can read more about how to use RuneProfile here: [runeprofile.com/info/guide
 
 
 <p align="center">
-<strong>Profile</strong>
-<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-example.png" >
+<strong>Collection Log</strong>
+<img src="https://raw.githubusercontent.com/ReinhardtR/runeprofile-plugin/refs/heads/master/assets/profile-log-example.png" >
 </p>
 
 <p align="center">
