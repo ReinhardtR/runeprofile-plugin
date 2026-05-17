@@ -26,8 +26,8 @@ public class PlayerData {
     // quest id -> quest state
     private Map<Integer, Integer> quests = new HashMap<>();
 
-    // tier id -> completed count
-    private Map<Integer, Integer> combatAchievementTiers = new HashMap<>();
+    // varp id -> raw 32-bit value
+    private Map<Integer, Integer> combatAchievementVarps = new HashMap<>();
 
     private List<AchievementDiaryTierData> achievementDiaryTiers = new ArrayList<>();
 

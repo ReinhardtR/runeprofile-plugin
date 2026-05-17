@@ -36,6 +36,9 @@ public class PlayerDataService {
     @Inject
     private RuneProfileConfig config;
 
+    @Inject
+    private ManifestService manifestService;
+
     // Clog items are not available through the client API, so we store them manually on clog open or item collection.
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
     private final Map<Integer, Integer> clogItems = new HashMap<>();
@@ -79,6 +82,7 @@ public class PlayerDataService {
     public CompletableFuture<PlayerData> getPlayerDataAsync() {
         CompletableFuture<PlayerData> playerDataFuture = new CompletableFuture<>();
         clientThread.invokeLater(() -> {
+            Manifest manifest = manifestService.getManifest();
             PlayerData playerData = new PlayerData();
 
             Player player = client.getLocalPlayer();
@@ -115,11 +119,12 @@ public class PlayerDataService {
                 playerData.getQuests().put(id, state);
             }
 
-            // combat achievement tiers
-            for (CombatAchievementTier tier : CombatAchievementTier.values()) {
-                int id = tier.getId();
-                int completedCount = tier.getCompletedCount(client);
-                playerData.getCombatAchievementTiers().put(id, completedCount);
+            // combat achievement varps
+            if (manifest != null && manifest.getCombatAchievementVarps().length > 0) {
+                for (int varpId : manifest.getCombatAchievementVarps()) {
+                    int value = client.getVarpValue(varpId);
+                    playerData.getCombatAchievementVarps().put(varpId, value);
+                }
             }
 
             // achievement diary tiers

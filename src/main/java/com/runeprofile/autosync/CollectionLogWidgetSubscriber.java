@@ -1,11 +1,9 @@
 package com.runeprofile.autosync;
 
 import com.runeprofile.RuneProfilePlugin;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.MenuAction;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.eventbus.EventBus;
@@ -18,6 +16,8 @@ import java.util.concurrent.ScheduledExecutorService;
 @Slf4j
 @Singleton
 public class CollectionLogWidgetSubscriber {
+    private static final int COLLECTION_DELAYED_TRANSMIT = 4100;
+
     @Inject
     private EventBus eventBus;
 
@@ -33,11 +33,7 @@ public class CollectionLogWidgetSubscriber {
     @Inject
     private RuneProfilePlugin plugin;
 
-    @Setter
     private boolean isManualSync = false;
-
-    private boolean isAutoClogRetrieval = false;
-
     private int tickCollectionLogScriptFired = -1;
 
     public void startUp() {
@@ -49,7 +45,6 @@ public class CollectionLogWidgetSubscriber {
     }
 
     public void reset() {
-        isAutoClogRetrieval = false;
         isManualSync = false;
         tickCollectionLogScriptFired = -1;
     }
@@ -77,7 +72,6 @@ public class CollectionLogWidgetSubscriber {
                 scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button-clog"));
                 isManualSync = false;
             }
-            isAutoClogRetrieval = false;
         }
     }
 
@@ -86,44 +80,28 @@ public class CollectionLogWidgetSubscriber {
     // License: BSD 2-Clause License
     @Subscribe
     public void onScriptPreFired(ScriptPreFired preFired) {
-        if (preFired.getScriptId() == 4100) {
-            // prevent reacting to scripts fired when opened from adventure log
-            // e.g. other plugins might fire the collection log script when viewing other players' collection logs
-            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
-            if (isOpenedFromAdventureLog) {
-                return;
-            }
-
-            tickCollectionLogScriptFired = client.getTickCount();
-
-            Object[] args = preFired.getScriptEvent().getArguments();
-            int itemId = (int) args[1];
-            int quantity = (int) args[2];
-
-            playerDataService.storeItem(itemId, quantity);
+        if (preFired.getScriptId() != COLLECTION_DELAYED_TRANSMIT) {
+            return;
         }
+
+        // prevent reacting to scripts fired when opened from adventure log
+        // e.g. other plugins might fire the collection log script when viewing other players' collection logs
+        boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+        if (isOpenedFromAdventureLog) {
+            return;
+        }
+
+        tickCollectionLogScriptFired = client.getTickCount();
+
+        Object[] args = preFired.getScriptEvent().getArguments();
+        int itemId = (int) args[1];
+        int quantity = (int) args[2];
+
+        playerDataService.storeItem(itemId, quantity);
     }
 
-    @Subscribe
-    public void onScriptPostFired(ScriptPostFired scriptPostFired) {
-        final int COLLECTION_LOG_SETUP = 7797;
-        if (scriptPostFired.getScriptId() == COLLECTION_LOG_SETUP) {
-            // disallow updating from the adventure log, to avoid players updating their profile
-            // while viewing other players collection logs using the POH adventure log.
-            boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
-            if (isOpenedFromAdventureLog) {
-                playerDataService.clearItems();
-                return;
-            }
-
-            if (isAutoClogRetrieval) {
-                return;
-            }
-
-            isAutoClogRetrieval = true;
-            client.menuAction(-1, 40697932, MenuAction.CC_OP, 1, -1, "Search", null);
-            client.runScript(2240);
-        }
+    public void triggerManualSync() {
+        isManualSync = true;
     }
 
     // fail-safe to clear stored items if the collection log is opened from the adventure log
