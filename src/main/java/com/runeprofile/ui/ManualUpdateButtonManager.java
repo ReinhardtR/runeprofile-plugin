@@ -1,170 +1,334 @@
 package com.runeprofile.ui;
 
 import com.google.inject.Inject;
-import com.runeprofile.RuneProfileConfig;
-import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.autosync.CollectionLogWidgetSubscriber;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
-import net.runelite.api.events.ScriptPreFired;
-import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetType;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
-import java.util.*;
-import java.util.concurrent.ScheduledExecutorService;
-
-import static java.lang.Math.round;
+import javax.inject.Singleton;
 
 @Slf4j
+@Singleton
 public class ManualUpdateButtonManager {
-    private static final int DRAW_BURGER_MENU = 7812;
-    private static final int FONT_COLOR = 0xFF981F;
-    private static final int FONT_COLOR_ACTIVE = 0xFFFFFF;
+    private static final int SEARCH_ICON_CHILD = 9;
+    private static final int TEXT_CHILD = 10;
+    private static final int TOGGLE_SEARCH_SCRIPT = 4084;
+    private static final int COLLECTION_INIT_SCRIPT = 2240;
+    private static final int COLLECTION_LOG_SETUP = 7797;
+    private static final int ORIGINAL_BUTTON_WIDTH = 71;
+    private static final int SYNC_BUTTON_WIDTH = 80;
+    private static final int CORNER_SIZE = 9;
+    private static final String SYNC_ACTION = "Sync (Right-click Search)";
     private static final String BUTTON_TEXT = "RuneProfile";
+    private static final int FONT_COLOR_INACTIVE = 0xd6d6d6;
+    private static final int FONT_COLOR_ACTIVE = 0xffffff;
+    private static final int RATE_LIMIT_TICKS = 50;
+
+    private static final int[] SPRITE_IDS_INACTIVE = {
+            SpriteID.TRADEBACKING,
+            SpriteID.V2StoneButtonOut.A_TOP_LEFT,
+            SpriteID.V2StoneButtonOut.A_TOP_RIGHT,
+            SpriteID.V2StoneButtonOut.A_BOTTOM_LEFT,
+            SpriteID.V2StoneButtonOut.A_BOTTOM_RIGHT,
+            SpriteID.V2StoneButtonOut.A_MAP_EDGE_LEFT,
+            SpriteID.V2StoneButtonOut.A_MAP_EDGE_TOP,
+            SpriteID.V2StoneButtonOut.A_MAP_EDGE_RIGHT,
+            SpriteID.V2StoneButtonOut.A_MAP_EDGE_BOTTOM,
+    };
+
+    private static final int[] SPRITE_IDS_ACTIVE = {
+            SpriteID.TRADEBACKING_DARK,
+            SpriteID.V2StoneButtonIn.A_TOP_LEFT,
+            SpriteID.V2StoneButtonIn.A_TOP_RIGHT,
+            SpriteID.V2StoneButtonIn.A_BOTTOM_LEFT,
+            SpriteID.V2StoneButtonIn.A_BOTTOM_RIGHT,
+            SpriteID.V2StoneButtonIn.A_LEFT,
+            SpriteID.V2StoneButtonIn.A_TOP,
+            SpriteID.V2StoneButtonIn.A_RIGHT,
+            SpriteID.V2StoneButtonIn.A_BOTTOM,
+    };
 
     private final Client client;
     private final EventBus eventBus;
-    private final ScheduledExecutorService scheduledExecutorService;
-    private final RuneProfilePlugin plugin;
-    private final RuneProfileConfig config;
+    private final ClientThread clientThread;
     private final CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
 
-    private int baseMenuHeight = -1;
     private int lastAttemptedUpdate = -1;
+    private boolean isUndoingSearchToggle = false;
+    private boolean isSearchAction = false;
+    private boolean isSyncAction = false;
 
     @Inject
     private ManualUpdateButtonManager(
             Client client,
             EventBus eventBus,
-            ScheduledExecutorService scheduledExecutorService,
-            RuneProfilePlugin plugin,
-            RuneProfileConfig config,
+            ClientThread clientThread,
             CollectionLogWidgetSubscriber collectionLogWidgetSubscriber
     ) {
         this.client = client;
         this.eventBus = eventBus;
-        this.scheduledExecutorService = scheduledExecutorService;
-        this.plugin = plugin;
-        this.config = config;
+        this.clientThread = clientThread;
         this.collectionLogWidgetSubscriber = collectionLogWidgetSubscriber;
     }
 
     public void startUp() {
         eventBus.register(this);
+        clientThread.invokeLater(this::setupSyncButton);
     }
 
     public void shutDown() {
         eventBus.unregister(this);
+        clientThread.invokeLater(this::resetButton);
+    }
+
+    private void resetButton() {
+        Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
+        if (searchButton == null) {
+            return;
+        }
+
+        // Re-run the collection log setup script to restore original button state
+        client.runScript(COLLECTION_LOG_SETUP);
     }
 
     @Subscribe
-    public void onScriptPreFired(ScriptPreFired event) {
-        if (!config.showClogSyncButton() || event.getScriptId() != DRAW_BURGER_MENU) {
+    public void onWidgetLoaded(WidgetLoaded event) {
+        if (event.getGroupId() != InterfaceID.COLLECTION) {
             return;
         }
 
-        Object[] args = event.getScriptEvent().getArguments();
-        int menuId = (int) args[3];
+        // Reset flags
+        isUndoingSearchToggle = false;
+        isSearchAction = false;
+        isSyncAction = false;
 
-        try {
-            log.debug("Adding RuneProfile button to menu with ID: {}", menuId);
-            addButton(menuId, this::onButtonClick);
-        } catch (Exception e) {
-            log.debug("Failed to add RuneProfile button to menu: {}", e.getMessage());
-        }
+        // Wait 2 ticks for widgets to fully populate
+        clientThread.invokeLater(() -> clientThread.invokeLater(this::setupSyncButton));
     }
 
-    private void onButtonClick() {
-        if (lastAttemptedUpdate != -1 && lastAttemptedUpdate + 50 > client.getTickCount()) {
-            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Last update within 30 seconds. You can update again in " + round((lastAttemptedUpdate + 50 - client.getTickCount()) * 0.6) + " seconds.", "RuneProfile");
+    private void setupSyncButton() {
+        if (isSearchOpen() || isOpenedFromAdventureLog()) {
             return;
         }
+
+        Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
+        if (searchButton == null) {
+            return;
+        }
+
+        // Resize the border/background sprite children (0-8) to match the new width.
+        // These follow a 9-sprite pattern: background, 4 corners, 4 edges.
+        Widget[] children = searchButton.getChildren();
+        if (children != null) {
+            for (int i = 0; i < children.length && i < SEARCH_ICON_CHILD; i++) {
+                Widget child = children[i];
+                if (child == null) {
+                    continue;
+                }
+                int w = child.getOriginalWidth();
+                int x = child.getOriginalX();
+
+                // Full-width children (background)
+                if (w == ORIGINAL_BUTTON_WIDTH) {
+                    child.setOriginalWidth(SYNC_BUTTON_WIDTH);
+                }
+                // Top/bottom edge sprites (width = buttonWidth - 2*cornerSize)
+                else if (w == ORIGINAL_BUTTON_WIDTH - 2 * CORNER_SIZE) {
+                    child.setOriginalWidth(SYNC_BUTTON_WIDTH - 2 * CORNER_SIZE);
+                }
+
+                // Right-side corners/edges anchored at oldWidth - cornerSize
+                if (x == ORIGINAL_BUTTON_WIDTH - CORNER_SIZE) {
+                    child.setOriginalX(SYNC_BUTTON_WIDTH - CORNER_SIZE);
+                }
+
+                child.revalidate();
+            }
+        }
+
+        Widget textChild = searchButton.getChild(TEXT_CHILD);
+        if (textChild != null) {
+            textChild.setText(BUTTON_TEXT);
+            textChild.setTextColor(FONT_COLOR_INACTIVE);
+            textChild.setOriginalX(0);
+            textChild.setWidthMode(0);
+            textChild.setOriginalWidth(SYNC_BUTTON_WIDTH);
+            textChild.setXTextAlignment(1);
+            textChild.revalidate();
+        }
+
+        Widget iconChild = searchButton.getChild(SEARCH_ICON_CHILD);
+        if (iconChild != null) {
+            iconChild.setHidden(true);
+        }
+
+        searchButton.setOriginalWidth(SYNC_BUTTON_WIDTH);
+        searchButton.setOnMouseOverListener((JavaScriptCallback) ev -> {
+            Widget[] sprites = searchButton.getChildren();
+            if (sprites != null) {
+                for (int i = 0; i < SPRITE_IDS_ACTIVE.length && i < sprites.length; i++) {
+                    if (sprites[i] != null) {
+                        sprites[i].setSpriteId(SPRITE_IDS_ACTIVE[i]);
+                    }
+                }
+            }
+            if (textChild != null) {
+                textChild.setTextColor(FONT_COLOR_ACTIVE);
+            }
+        });
+        searchButton.setOnMouseLeaveListener((JavaScriptCallback) ev -> {
+            Widget[] sprites = searchButton.getChildren();
+            if (sprites != null) {
+                for (int i = 0; i < SPRITE_IDS_INACTIVE.length && i < sprites.length; i++) {
+                    if (sprites[i] != null) {
+                        sprites[i].setSpriteId(SPRITE_IDS_INACTIVE[i]);
+                    }
+                }
+            }
+            if (textChild != null) {
+                textChild.setTextColor(FONT_COLOR_INACTIVE);
+            }
+        });
+        searchButton.revalidate();
+        searchButton.setAction(0, SYNC_ACTION);
+    }
+
+    @Subscribe
+    public void onMenuEntryAdded(MenuEntryAdded event) {
+        if (event.getActionParam1() != InterfaceID.Collection.SEARCH_TOGGLE) {
+            return;
+        }
+
+        if (isOpenedFromAdventureLog() || isSearchOpen()) {
+            return;
+        }
+
+        client.getMenu().createMenuEntry(-1)
+                .setOption("Search")
+                .setTarget(event.getTarget())
+                .setType(MenuAction.RUNELITE)
+                .onClick(this::onSearchClicked);
+    }
+
+    private void onSearchClicked(MenuEntry entry) {
+        Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
+        if (searchButton == null) {
+            return;
+        }
+
+        Object[] onOpListener = searchButton.getOnOpListener();
+        if (onOpListener == null) {
+            return;
+        }
+
+        isSearchAction = true;
+        client.createScriptEventBuilder(onOpListener)
+                .setSource(searchButton)
+                .setOp(1)
+                .build()
+                .run();
+    }
+
+    /**
+     * Detect when user clicks our "Sync" action.
+     * Other plugins calling menuAction("Search") won't fire this event.
+     */
+    @Subscribe
+    public void onMenuOptionClicked(MenuOptionClicked event) {
+        if (!SYNC_ACTION.equals(event.getMenuOption())) {
+            return;
+        }
+        if (event.getParam1() != InterfaceID.Collection.SEARCH_TOGGLE) {
+            return;
+        }
+        if (isOpenedFromAdventureLog() || isSearchOpen()) {
+            return;
+        }
+
+        isSyncAction = true;
+
+        if (lastAttemptedUpdate != -1 && lastAttemptedUpdate + RATE_LIMIT_TICKS > client.getTickCount()) {
+            int secondsLeft = (int) Math.round((lastAttemptedUpdate + RATE_LIMIT_TICKS - client.getTickCount()) * 0.6);
+            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile",
+                    "Last update within 30 seconds. You can update again in " + secondsLeft + " seconds.", "RuneProfile");
+            return;
+        }
+
         lastAttemptedUpdate = client.getTickCount();
-
-        // if there is no items in the collection log, we can't offload the update to the collection log widget subscriber
-        // since the script 4100 is never fired.
-        int collectionCount = client.getVarpValue(VarPlayerID.COLLECTION_COUNT);
-        if (collectionCount == 0) {
-            scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button"));
-        } else {
-            collectionLogWidgetSubscriber.setManualSync(true);
-            client.runScript(2240);
-
-            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your profile...", "RuneProfile");
-        }
+        collectionLogWidgetSubscriber.triggerManualSync();
+        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your RuneProfile...", "RuneProfile");
     }
 
-    private void addButton(int menuId, Runnable onClick) throws NullPointerException, NoSuchElementException {
-        // disallow updating from the adventure log, to avoid players updating their profile
-        // while viewing other players collection logs using the POH adventure log.
-        boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
-        if (isOpenedFromAdventureLog) return;
-
-        Widget menu = Objects.requireNonNull(client.getWidget(menuId));
-        Widget[] menuChildren = Objects.requireNonNull(menu.getChildren());
-
-        if (baseMenuHeight == -1) {
-            baseMenuHeight = menu.getOriginalHeight();
+    @Subscribe
+    public void onScriptPostFired(ScriptPostFired event) {
+        if (event.getScriptId() == COLLECTION_INIT_SCRIPT || event.getScriptId() == COLLECTION_LOG_SETUP) {
+            setupSyncButton();
+            return;
         }
 
-        List<Widget> reversedMenuChildren = new ArrayList<>(Arrays.asList(menuChildren));
-        Collections.reverse(reversedMenuChildren);
-        Widget lastRectangle = reversedMenuChildren.stream()
-                .filter(w -> w.getType() == WidgetType.RECTANGLE)
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("No RECTANGLE widget found in menu"));
-        Widget lastText = reversedMenuChildren.stream()
-                .filter(w -> w.getType() == WidgetType.TEXT)
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("No TEXT widget found in menu"));
-
-        final int buttonHeight = lastRectangle.getHeight();
-        final int buttonY = lastRectangle.getOriginalY() + buttonHeight;
-
-        final boolean existingButton = Arrays.stream(menuChildren)
-                .anyMatch(w -> w.getText().equals(BUTTON_TEXT));
-
-        if (!existingButton) {
-            final Widget background = menu.createChild(WidgetType.RECTANGLE)
-                    .setOriginalWidth(lastRectangle.getOriginalWidth())
-                    .setOriginalHeight(lastRectangle.getOriginalHeight())
-                    .setOriginalX(lastRectangle.getOriginalX())
-                    .setOriginalY(buttonY)
-                    .setOpacity(lastRectangle.getOpacity())
-                    .setFilled(lastRectangle.isFilled());
-            background.revalidate();
-
-            final Widget text = menu.createChild(WidgetType.TEXT)
-                    .setText(BUTTON_TEXT)
-                    .setTextColor(FONT_COLOR)
-                    .setFontId(lastText.getFontId())
-                    .setTextShadowed(lastText.getTextShadowed())
-                    .setOriginalWidth(lastText.getOriginalWidth())
-                    .setOriginalHeight(lastText.getOriginalHeight())
-                    .setOriginalX(lastText.getOriginalX())
-                    .setOriginalY(buttonY)
-                    .setXTextAlignment(lastText.getXTextAlignment())
-                    .setYTextAlignment(lastText.getYTextAlignment());
-            text.setHasListener(true);
-            text.setOnMouseOverListener((JavaScriptCallback) ev -> text.setTextColor(FONT_COLOR_ACTIVE));
-            text.setOnMouseLeaveListener((JavaScriptCallback) ev -> text.setTextColor(FONT_COLOR));
-            text.setAction(0, "Update your RuneProfile");
-            text.setOnOpListener((JavaScriptCallback) ev -> onClick.run());
-            text.revalidate();
+        if (event.getScriptId() != TOGGLE_SEARCH_SCRIPT) {
+            return;
         }
 
-        if (menu.getOriginalHeight() <= baseMenuHeight) {
-            menu.setOriginalHeight((menu.getOriginalHeight() + buttonHeight));
+        if (isUndoingSearchToggle) {
+            isUndoingSearchToggle = false;
+            setupSyncButton();
+            return;
         }
 
-        menu.revalidate();
-        for (Widget child : menuChildren) {
-            child.revalidate();
+        if (isSearchAction) {
+            isSearchAction = false;
+            return;
         }
+
+        if (isSyncAction) {
+            isSyncAction = false;
+
+            Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
+            if (searchButton == null) {
+                return;
+            }
+
+            Object[] onOpListener = searchButton.getOnOpListener();
+            if (onOpListener == null) {
+                return;
+            }
+
+            isUndoingSearchToggle = true;
+            clientThread.invokeLater(() ->
+                    client.createScriptEventBuilder(onOpListener)
+                            .setSource(searchButton)
+                            .setOp(1)
+                            .build()
+                            .run()
+            );
+            return;
+        }
+
+        setupSyncButton();
+    }
+
+    private boolean isSearchOpen() {
+        Widget searchContainer = client.getWidget(InterfaceID.Collection.SEARCH_CONTAINER);
+        return searchContainer != null && !searchContainer.isHidden();
+    }
+
+    private boolean isOpenedFromAdventureLog() {
+        return client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
     }
 }
