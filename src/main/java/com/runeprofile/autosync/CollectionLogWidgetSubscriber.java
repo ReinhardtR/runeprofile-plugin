@@ -4,7 +4,9 @@ import com.runeprofile.RuneProfilePlugin;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.MenuAction;
 import net.runelite.api.events.*;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -17,6 +19,8 @@ import java.util.concurrent.ScheduledExecutorService;
 @Singleton
 public class CollectionLogWidgetSubscriber {
     private static final int COLLECTION_DELAYED_TRANSMIT = 4100;
+    private static final int COLLECTION_LOG_SETUP = 7797;
+    private static final int COLLECTION_INIT_SCRIPT = 2240;
 
     @Inject
     private EventBus eventBus;
@@ -34,6 +38,7 @@ public class CollectionLogWidgetSubscriber {
     private RuneProfilePlugin plugin;
 
     private boolean isManualSync = false;
+    private boolean isAutoClogRetrieval = false;
     private int tickCollectionLogScriptFired = -1;
 
     public void startUp() {
@@ -46,6 +51,7 @@ public class CollectionLogWidgetSubscriber {
 
     public void reset() {
         isManualSync = false;
+        isAutoClogRetrieval = false;
         tickCollectionLogScriptFired = -1;
     }
 
@@ -72,6 +78,7 @@ public class CollectionLogWidgetSubscriber {
                 scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button-clog"));
                 isManualSync = false;
             }
+            isAutoClogRetrieval = false;
         }
     }
 
@@ -96,8 +103,37 @@ public class CollectionLogWidgetSubscriber {
         Object[] args = preFired.getScriptEvent().getArguments();
         int itemId = (int) args[1];
         int quantity = (int) args[2];
+        log.debug("Item id: {}, Quantity: {}", itemId, quantity);
 
         playerDataService.storeItem(itemId, quantity);
+    }
+
+    // When the collection log is opened, automatically make the server transmit every clog
+    // entry so the full collection log is stored for the next auto-sync (no profile update is
+    // triggered here). The menuAction "Search" op is what requests the data from the server;
+    // re-running the collection log init script then resets the view, closing the search again.
+    @Subscribe
+    public void onScriptPostFired(ScriptPostFired scriptPostFired) {
+        if (scriptPostFired.getScriptId() != COLLECTION_LOG_SETUP) {
+            return;
+        }
+
+        // disallow retrieving from the adventure log, to avoid storing another player's
+        // collection log while viewing it through the POH adventure log.
+        boolean isOpenedFromAdventureLog = client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1;
+        if (isOpenedFromAdventureLog) {
+            playerDataService.clearItems();
+            return;
+        }
+
+        // guard against re-triggering from the init script we run below (which re-fires setup)
+        if (isAutoClogRetrieval) {
+            return;
+        }
+
+        isAutoClogRetrieval = true;
+        client.menuAction(-1, InterfaceID.Collection.SEARCH_TOGGLE, MenuAction.CC_OP, 1, -1, "Search", null);
+        client.runScript(COLLECTION_INIT_SCRIPT);
     }
 
     public void triggerManualSync() {
