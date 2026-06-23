@@ -1,6 +1,8 @@
 package com.runeprofile.ui;
 
 import com.google.inject.Inject;
+import com.runeprofile.RuneProfileConfig;
+import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.autosync.CollectionLogWidgetSubscriber;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -19,6 +21,7 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 
 import javax.inject.Singleton;
 
@@ -67,6 +70,7 @@ public class ManualUpdateButtonManager {
     private final EventBus eventBus;
     private final ClientThread clientThread;
     private final CollectionLogWidgetSubscriber collectionLogWidgetSubscriber;
+    private final RuneProfileConfig config;
 
     private int lastAttemptedUpdate = -1;
     private boolean isUndoingSearchToggle = false;
@@ -78,12 +82,14 @@ public class ManualUpdateButtonManager {
             Client client,
             EventBus eventBus,
             ClientThread clientThread,
-            CollectionLogWidgetSubscriber collectionLogWidgetSubscriber
+            CollectionLogWidgetSubscriber collectionLogWidgetSubscriber,
+            RuneProfileConfig config
     ) {
         this.client = client;
         this.eventBus = eventBus;
         this.clientThread = clientThread;
         this.collectionLogWidgetSubscriber = collectionLogWidgetSubscriber;
+        this.config = config;
     }
 
     public void startUp() {
@@ -107,6 +113,24 @@ public class ManualUpdateButtonManager {
     }
 
     @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP)) {
+            return;
+        }
+        if (!"show_clog_sync_button".equals(event.getKey())) {
+            return;
+        }
+
+        clientThread.invokeLater(() -> {
+            if (config.showClogSyncButton()) {
+                setupSyncButton();
+            } else {
+                resetButton();
+            }
+        });
+    }
+
+    @Subscribe
     public void onWidgetLoaded(WidgetLoaded event) {
         if (event.getGroupId() != InterfaceID.COLLECTION) {
             return;
@@ -122,6 +146,10 @@ public class ManualUpdateButtonManager {
     }
 
     private void setupSyncButton() {
+        if (!config.showClogSyncButton()) {
+            return;
+        }
+
         if (isSearchOpen() || isOpenedFromAdventureLog()) {
             return;
         }
@@ -210,6 +238,10 @@ public class ManualUpdateButtonManager {
 
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
+        if (!config.showClogSyncButton()) {
+            return;
+        }
+
         if (event.getActionParam1() != InterfaceID.Collection.SEARCH_TOGGLE) {
             return;
         }
