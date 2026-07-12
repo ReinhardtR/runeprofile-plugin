@@ -57,6 +57,7 @@ public class RuneProfilePanel extends PluginPanel {
 
     public void startUp() {
         eventBus.register(this);
+        layoutPluginPanel.startUp();
 
         updateState(client.getGameState());
 
@@ -67,6 +68,7 @@ public class RuneProfilePanel extends PluginPanel {
 
     public void shutDown() {
         eventBus.unregister(this);
+        layoutPluginPanel.shutDown();
 
         clientToolbar.removeNavigation(navigationButton);
     }
@@ -101,6 +103,8 @@ public class RuneProfilePanel extends PluginPanel {
     }
 
     private void loadValidState() {
+        layoutPluginPanel.onValidStateEntered();
+
         SwingUtilities.invokeLater(() -> {
             if (invalidPanel != null) {
                 remove(invalidPanel);

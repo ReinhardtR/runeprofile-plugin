@@ -216,15 +216,6 @@ public class RuneProfileApiClient {
                 .thenApplyAsync((response -> handleResponse(response, CollectionLogPage.class)));
     }
 
-    public CompletableFuture<ProfileSearchResult[]> searchProfiles(String query) {
-        HttpUrl url = buildApiUrl("profiles")
-                .newBuilder()
-                .addQueryParameter("q", query)
-                .build();
-        return getHttpRequestAsync(url)
-                .thenApplyAsync((response -> handleResponse(response, ProfileSearchResult[].class)));
-    }
-
     public CompletableFuture<Void> setDefaultClogPage(DefaultClogPageData data) {
         HttpUrl url = buildApiUrl("profiles", "set-default-clog-page");
         return postHttpRequestAsync(url, gson.toJson(data))
