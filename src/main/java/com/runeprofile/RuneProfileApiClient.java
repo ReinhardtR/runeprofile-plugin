@@ -3,6 +3,8 @@ package com.runeprofile;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.runeprofile.data.*;
+import com.runeprofile.data.activities.ActivitiesResponse;
+import com.runeprofile.data.activities.ActivityRecord;
 import com.runeprofile.utils.RuneProfileApiException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import okhttp3.*;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -160,6 +163,22 @@ public class RuneProfileApiClient {
         HttpUrl url = buildApiUrl("profiles", "accounts", accountHash);
         return getHttpRequestAsync(url)
                 .thenApplyAsync((response) -> handleResponse(response, AccountInfo.class));
+    }
+
+    public CompletableFuture<List<ActivityRecord>> getValuableDropsAsync(String accountHash, int limit) {
+        HttpUrl url = buildApiUrl("profiles", "accounts", accountHash, "activities")
+                .newBuilder()
+                .addQueryParameter("activityTypes", "valuable_drop")
+                .addQueryParameter("limit", String.valueOf(limit))
+                .build();
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response) -> Objects.requireNonNull(handleResponse(response, ActivitiesResponse.class)).getActivities());
+    }
+
+    public CompletableFuture<Void> deleteActivityAsync(String accountHash, String activityId) {
+        HttpUrl url = buildApiUrl("profiles", "accounts", accountHash, "activities", activityId);
+        return deleteHttpRequestAsync(url)
+                .thenApply((response) -> handleResponse(response, null));
     }
 
     public CompletableFuture<Void> deleteProfileAsync(String accountHash) {

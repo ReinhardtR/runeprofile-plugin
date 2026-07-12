@@ -4,12 +4,22 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
+import net.runelite.client.ui.FontManager;
+import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 import okhttp3.*;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.io.Reader;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -72,6 +82,61 @@ public class Utils {
         }
 
         return result;
+    }
+
+    /**
+     * Formats an API timestamp (Postgres "yyyy-MM-dd HH:mm:ss[.SSSSSS]" in UTC,
+     * or ISO-8601) for display. Falls back to the raw string if parsing fails.
+     */
+    public String formatTimestamp(String raw) {
+        if (raw == null || raw.isEmpty()) return "";
+
+        DateTimeFormatter displayFormat = DateTimeFormatter.ofPattern("MMM d, yyyy");
+        String normalized = raw.trim().replace(' ', 'T');
+
+        try {
+            return OffsetDateTime.parse(normalized)
+                    .atZoneSameInstant(ZoneId.systemDefault())
+                    .format(displayFormat);
+        } catch (DateTimeParseException ignored) {
+            // no offset in the string, assume UTC
+        }
+
+        try {
+            return LocalDateTime.parse(normalized)
+                    .atOffset(ZoneOffset.UTC)
+                    .atZoneSameInstant(ZoneId.systemDefault())
+                    .format(displayFormat);
+        } catch (DateTimeParseException e) {
+            return raw;
+        }
+    }
+
+    /**
+     * Multiline text that wraps at the component's actual width. Preferable over
+     * width-constrained html labels, whose text can get clipped because the html
+     * renderer measures the RuneScape fonts differently than they paint.
+     */
+    public JTextArea createParagraph(String text) {
+        JTextArea area = new JTextArea();
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setEditable(false);
+        area.setFocusable(false);
+        area.setOpaque(false);
+        area.setBorder(null);
+        area.setFont(FontManager.getRunescapeSmallFont());
+        area.setForeground(Color.LIGHT_GRAY);
+        setParagraphText(area, text);
+        return area;
+    }
+
+    public void setParagraphText(JTextArea area, String text) {
+        area.setText(text);
+        // the line-wrapped preferred height is derived from the current width,
+        // so give it a conservative width before the next layout
+        area.setSize(PluginPanel.PANEL_WIDTH - 40, Short.MAX_VALUE);
+        area.setMaximumSize(new Dimension(Short.MAX_VALUE, area.getPreferredSize().height));
     }
 
     public boolean isAccountNotFound(Throwable ex) {
