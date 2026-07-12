@@ -120,8 +120,20 @@ public class RuneProfileApiClient {
             String bodyString = body.string();
 
             if (!response.isSuccessful()) {
-                JsonObject json = gson.fromJson(bodyString, JsonObject.class);
-                throw new RuneProfileApiException(json.get("message").getAsString());
+                String message = "Request failed (" + res.code() + ")";
+                String code = null;
+                try {
+                    JsonObject json = gson.fromJson(bodyString, JsonObject.class);
+                    if (json != null && json.has("message") && json.get("message").isJsonPrimitive()) {
+                        message = json.get("message").getAsString();
+                    }
+                    if (json != null && json.has("code") && json.get("code").isJsonPrimitive()) {
+                        code = json.get("code").getAsString();
+                    }
+                } catch (Exception e) {
+                    log.debug("Failed to parse API error body: {}", bodyString, e);
+                }
+                throw new RuneProfileApiException(message, code, res.code());
             }
 
             if (clazz == null) {
@@ -134,14 +146,20 @@ public class RuneProfileApiClient {
         }
     }
 
-    public CompletableFuture<Void> updateProfileAsync(PlayerData data, String eventSource) {
+    public CompletableFuture<UpdateProfileResult> updateProfileAsync(PlayerData data, String eventSource) {
         HttpUrl url = buildApiUrl("profiles");
 
         JsonObject payload = gson.toJsonTree(data).getAsJsonObject();
         payload.addProperty("eventSource", eventSource);
 
         return postHttpRequestAsync(url, gson.toJson(payload))
-                .thenApply((response) -> handleResponse(response, null));
+                .thenApply((response) -> handleResponse(response, UpdateProfileResult.class));
+    }
+
+    public CompletableFuture<AccountInfo> getAccountAsync(String accountHash) {
+        HttpUrl url = buildApiUrl("profiles", "accounts", accountHash);
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response) -> handleResponse(response, AccountInfo.class));
     }
 
     public CompletableFuture<Void> deleteProfileAsync(String accountHash) {

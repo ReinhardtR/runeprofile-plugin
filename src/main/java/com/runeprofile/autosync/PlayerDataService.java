@@ -176,7 +176,11 @@ public class PlayerDataService {
             String accountHash = AccountHash.getHashed(client);
 
             Player player = client.getLocalPlayer();
-            Model model = player.getModel();
+            Model model = player != null ? player.getModel() : null;
+            if (model == null) {
+                dataFuture.completeExceptionally(new IllegalStateException("Player model is not available yet"));
+                return;
+            }
 
             byte[] modelBytes = null;
             try {

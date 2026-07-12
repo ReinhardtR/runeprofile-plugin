@@ -4,8 +4,11 @@ import com.google.inject.Provides;
 
 import com.runeprofile.autosync.*;
 import com.runeprofile.data.AddActivities;
+import com.runeprofile.data.UpdateProfileResult;
 import com.runeprofile.data.activities.Activity;
 import com.runeprofile.data.activities.ActivityData;
+import com.runeprofile.events.ProfileCreated;
+import com.runeprofile.events.ProfileDeleted;
 import com.runeprofile.ui.*;
 import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.RuneProfileApiException;
@@ -15,12 +18,16 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @PluginDescriptor(
@@ -41,6 +48,12 @@ public class RuneProfilePlugin extends Plugin {
     private ClientThread clientThread;
 
     @Inject
+    private EventBus eventBus;
+
+    @Inject
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Inject
     private RuneProfileApiClient runeProfileApiClient;
 
     @Inject
@@ -48,6 +61,9 @@ public class RuneProfilePlugin extends Plugin {
 
     @Inject
     private AutoSyncScheduler autoSyncScheduler;
+
+    @Inject
+    private ProfileCreationService profileCreationService;
 
     @Inject
     private ManifestService manifestService;
@@ -110,6 +126,7 @@ public class RuneProfilePlugin extends Plugin {
         playerDataService.startUp();
 
         autoSyncScheduler.startUp();
+        profileCreationService.startUp();
         valuableDropSubscriber.startUp();
         collectionLogWidgetSubscriber.startUp();
         collectionNotificationSubscriber.startUp();
@@ -135,6 +152,7 @@ public class RuneProfilePlugin extends Plugin {
         playerDataService.shutDown();
 
         autoSyncScheduler.shutDown();
+        profileCreationService.shutDown();
         valuableDropSubscriber.shutDown();
         collectionLogWidgetSubscriber.shutDown();
         collectionNotificationSubscriber.shutDown();
@@ -152,7 +170,7 @@ public class RuneProfilePlugin extends Plugin {
         commandSuggestionOverlay.shutDown();
     }
 
-    public void updateProfileAsync(boolean isAutoSync, String eventSource) {
+    public CompletableFuture<UpdateProfileResult> updateProfileAsync(boolean isAutoSync, String eventSource) {
         if (!PlayerState.isValidPlayerState(client)) {
             if (!isAutoSync) {
                 clientThread.invokeLater(() -> {
@@ -168,12 +186,18 @@ public class RuneProfilePlugin extends Plugin {
             autoSyncScheduler.resetAutoSyncTimer();
         }
 
-        playerDataService.getPlayerDataAsync().thenCompose((data) -> {
+        return playerDataService.getPlayerDataAsync().thenCompose((data) -> {
                     // sanity check: a player reported syncs going through on invalid worlds
                     if (!PlayerState.isValidPlayerState(client)) {
                         throw new IllegalStateException("Invalid player state after fetching player data");
                     }
-                    return runeProfileApiClient.updateProfileAsync(data, eventSource);
+                    return runeProfileApiClient.updateProfileAsync(data, eventSource)
+                            .thenApply((result) -> {
+                                if (result != null && result.isCreated()) {
+                                    onProfileCreated(data.getId());
+                                }
+                                return result;
+                            });
                 })
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
@@ -200,13 +224,36 @@ public class RuneProfilePlugin extends Plugin {
                 });
     }
 
+    /**
+     * Called when a profile update response indicates the profile was newly created.
+     * Runs for every creation path: auto-creation at login, the panel's Create Profile
+     * button, and re-creation after a profile deletion.
+     */
+    private void onProfileCreated(String accountId) {
+        clientThread.invokeLater(() -> {
+            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your RuneProfile has been created! Open your collection log in-game to sync your collection log data. You can update your player model from the RuneProfile side panel.", "RuneProfile");
+        });
+
+        eventBus.post(new ProfileCreated(accountId));
+
+        // Upload the player model once so the profile doesn't show the default model.
+        // Delayed a bit so the local player is fully rendered.
+        scheduledExecutorService.schedule(() -> {
+            if (!PlayerState.isValidPlayerState(client)) {
+                log.debug("Skipping initial model upload: invalid player state");
+                return;
+            }
+            updateModelAsync(true);
+        }, 5, TimeUnit.SECONDS);
+    }
+
     public void deleteProfileAsync() {
         if (!PlayerState.isValidPlayerState(client)) {
             throw new IllegalStateException("Invalid player state");
         }
 
-        playerDataService.getAccountIdAsync().thenCompose((accountId) -> runeProfileApiClient.deleteProfileAsync(accountId))
-                .whenComplete((result, ex) -> {
+        playerDataService.getAccountIdAsync().thenCompose((accountId) -> runeProfileApiClient.deleteProfileAsync(accountId).thenApply((v) -> accountId))
+                .whenComplete((accountId, ex) -> {
                     if (ex != null) {
                         log.error("Error deleting profile", ex);
 
@@ -219,6 +266,8 @@ public class RuneProfilePlugin extends Plugin {
                         throw new RuneProfileApiException(errorMessage);
                     }
 
+                    eventBus.post(new ProfileDeleted(accountId));
+
                     clientThread.invokeLater(() -> {
                         client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your profile has been deleted!", "RuneProfile");
                     });
@@ -226,16 +275,36 @@ public class RuneProfilePlugin extends Plugin {
     }
 
     public void updateModelAsync() {
+        updateModelAsync(false);
+    }
+
+    public void updateModelAsync(boolean quiet) {
         if (!PlayerState.isValidPlayerState(client)) {
             throw new IllegalStateException("Invalid player state");
         }
 
-        playerDataService.getPlayerModelDataAsync().thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
+        playerDataService.getPlayerModelDataAsync()
+                .whenComplete((data, ex) -> {
+                    if (ex == null) return;
+
+                    log.error("Error exporting player model", ex);
+                    if (!quiet) {
+                        clientThread.invokeLater(() -> {
+                            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Failed to export your player model.", "RuneProfile");
+                        });
+                    }
+                })
+                .thenCompose((data) -> runeProfileApiClient.updateModelAsync(data)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Error updating model", ex);
 
                         final String errorMessage = Utils.getApiErrorMessage(ex, "Failed to update your player model.");
+
+                        if (quiet) {
+                            log.warn("Initial model upload failed: {}", errorMessage);
+                            return;
+                        }
 
                         clientThread.invokeLater(() -> {
                             client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", errorMessage, "RuneProfile");
@@ -243,6 +312,8 @@ public class RuneProfilePlugin extends Plugin {
 
                         throw new RuneProfileApiException(errorMessage);
                     }
+
+                    if (quiet) return;
 
                     clientThread.invokeLater(() -> {
                         client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Your player model has been updated!", "RuneProfile");

@@ -73,4 +73,14 @@ public class Utils {
 
         return result;
     }
+
+    public boolean isAccountNotFound(Throwable ex) {
+        if (ex instanceof RuneProfileApiException) {
+            return ((RuneProfileApiException) ex).isAccountNotFound();
+        }
+        if (ex.getCause() instanceof RuneProfileApiException) {
+            return ((RuneProfileApiException) ex.getCause()).isAccountNotFound();
+        }
+        return false;
+    }
 }
