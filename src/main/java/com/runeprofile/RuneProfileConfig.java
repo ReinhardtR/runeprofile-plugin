@@ -1,5 +1,7 @@
 package com.runeprofile;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -7,6 +9,21 @@ import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup(RuneProfilePlugin.CONFIG_GROUP)
 public interface RuneProfileConfig extends Config {
+    @Getter
+    @RequiredArgsConstructor
+    enum SyncButtonMode {
+        REPLACE_SEARCH("Left-click"),
+        RIGHT_CLICK("Right-click"),
+        DISABLED("Disabled");
+
+        private final String displayName;
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+    }
+
     @ConfigSection(
             name = "Profile",
             description = "Settings for your RuneProfile",
@@ -135,14 +152,16 @@ public interface RuneProfileConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "show_clog_sync_button",
-            name = "Enable RuneProfile Sync button",
-            description = "Shows the RuneProfile button in the Collection Log menu.",
+            keyName = "clog_sync_button_mode",
+            name = "Sync button",
+            description = "How the RuneProfile Sync button appears in the Collection Log.<br>" +
+                    "'Left-click' visually replaces the Search button (Search moves to right-click).<br>" +
+                    "'Right-click' keeps the Search button and adds Sync as a right-click option.",
             position = 2,
             section = otherSection
     )
-    default boolean showClogSyncButton() {
-        return true;
+    default SyncButtonMode clogSyncButtonMode() {
+        return SyncButtonMode.REPLACE_SEARCH;
     }
 
 }

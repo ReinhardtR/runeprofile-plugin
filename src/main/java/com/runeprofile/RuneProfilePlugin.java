@@ -93,6 +93,9 @@ public class RuneProfilePlugin extends Plugin {
     private CombatAchievementSubscriber combatAchievementSubscriber;
 
     @Inject
+    private ConfigMigration configMigration;
+
+    @Inject
     private ManualUpdateButtonManager manualUpdateButtonManager;
 
     @Inject
@@ -119,6 +122,8 @@ public class RuneProfilePlugin extends Plugin {
 
     @Override
     protected void startUp() {
+        configMigration.migrate();
+
         this.runeProfilePanel = injector.getInstance(RuneProfilePanel.class);
         runeProfilePanel.startUp();
 

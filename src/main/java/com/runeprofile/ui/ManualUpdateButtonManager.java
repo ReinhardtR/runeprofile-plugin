@@ -37,6 +37,7 @@ public class ManualUpdateButtonManager {
     private static final int SYNC_BUTTON_WIDTH = 80;
     private static final int CORNER_SIZE = 9;
     private static final String SYNC_ACTION = "Sync (Right-click Search)";
+    private static final String RIGHT_CLICK_SYNC_ACTION = "Sync RuneProfile";
     private static final String BUTTON_TEXT = "RuneProfile";
     private static final int FONT_COLOR_INACTIVE = 0xd6d6d6;
     private static final int FONT_COLOR_ACTIVE = 0xffffff;
@@ -117,12 +118,12 @@ public class ManualUpdateButtonManager {
         if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP)) {
             return;
         }
-        if (!"show_clog_sync_button".equals(event.getKey())) {
+        if (!"clog_sync_button_mode".equals(event.getKey())) {
             return;
         }
 
         clientThread.invokeLater(() -> {
-            if (config.showClogSyncButton()) {
+            if (config.clogSyncButtonMode() == RuneProfileConfig.SyncButtonMode.REPLACE_SEARCH) {
                 setupSyncButton();
             } else {
                 resetButton();
@@ -146,7 +147,7 @@ public class ManualUpdateButtonManager {
     }
 
     private void setupSyncButton() {
-        if (!config.showClogSyncButton()) {
+        if (config.clogSyncButtonMode() != RuneProfileConfig.SyncButtonMode.REPLACE_SEARCH) {
             return;
         }
 
@@ -238,10 +239,6 @@ public class ManualUpdateButtonManager {
 
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
-        if (!config.showClogSyncButton()) {
-            return;
-        }
-
         if (event.getActionParam1() != InterfaceID.Collection.SEARCH_TOGGLE) {
             return;
         }
@@ -250,11 +247,24 @@ public class ManualUpdateButtonManager {
             return;
         }
 
-        client.getMenu().createMenuEntry(-1)
-                .setOption("Search")
-                .setTarget(event.getTarget())
-                .setType(MenuAction.RUNELITE)
-                .onClick(this::onSearchClicked);
+        switch (config.clogSyncButtonMode()) {
+            case REPLACE_SEARCH:
+                client.getMenu().createMenuEntry(-1)
+                        .setOption("Search")
+                        .setTarget(event.getTarget())
+                        .setType(MenuAction.RUNELITE)
+                        .onClick(this::onSearchClicked);
+                break;
+            case RIGHT_CLICK:
+                client.getMenu().createMenuEntry(-1)
+                        .setOption(RIGHT_CLICK_SYNC_ACTION)
+                        .setTarget(event.getTarget())
+                        .setType(MenuAction.RUNELITE)
+                        .onClick(this::onSyncEntryClicked);
+                break;
+            default:
+                break;
+        }
     }
 
     private void onSearchClicked(MenuEntry entry) {
@@ -276,6 +286,52 @@ public class ManualUpdateButtonManager {
                 .run();
     }
 
+    private void onSyncEntryClicked(MenuEntry entry) {
+        if (isOpenedFromAdventureLog() || isSearchOpen()) {
+            return;
+        }
+
+        if (!tryStartSync()) {
+            return;
+        }
+
+        Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
+        if (searchButton == null) {
+            return;
+        }
+
+        Object[] onOpListener = searchButton.getOnOpListener();
+        if (onOpListener == null) {
+            return;
+        }
+
+        // Fire the search toggle to force the game to load all collection log
+        // items; onScriptPostFired silently undoes it via isSyncAction.
+        isSyncAction = true;
+        client.createScriptEventBuilder(onOpListener)
+                .setSource(searchButton)
+                .setOp(1)
+                .build()
+                .run();
+    }
+
+    /**
+     * Rate-limits and kicks off a manual sync. Returns false if rate-limited.
+     */
+    private boolean tryStartSync() {
+        if (lastAttemptedUpdate != -1 && lastAttemptedUpdate + RATE_LIMIT_TICKS > client.getTickCount()) {
+            int secondsLeft = (int) Math.round((lastAttemptedUpdate + RATE_LIMIT_TICKS - client.getTickCount()) * 0.6);
+            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile",
+                    "Last update within 30 seconds. You can update again in " + secondsLeft + " seconds.", "RuneProfile");
+            return false;
+        }
+
+        lastAttemptedUpdate = client.getTickCount();
+        collectionLogWidgetSubscriber.triggerManualSync();
+        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your RuneProfile...", "RuneProfile");
+        return true;
+    }
+
     /**
      * Detect when user clicks our "Sync" action.
      * Other plugins calling menuAction("Search") won't fire this event.
@@ -292,18 +348,11 @@ public class ManualUpdateButtonManager {
             return;
         }
 
+        // Set before the rate-limit check: the widget op fires regardless,
+        // so the search toggle must still be undone.
         isSyncAction = true;
 
-        if (lastAttemptedUpdate != -1 && lastAttemptedUpdate + RATE_LIMIT_TICKS > client.getTickCount()) {
-            int secondsLeft = (int) Math.round((lastAttemptedUpdate + RATE_LIMIT_TICKS - client.getTickCount()) * 0.6);
-            client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile",
-                    "Last update within 30 seconds. You can update again in " + secondsLeft + " seconds.", "RuneProfile");
-            return;
-        }
-
-        lastAttemptedUpdate = client.getTickCount();
-        collectionLogWidgetSubscriber.triggerManualSync();
-        client.addChatMessage(ChatMessageType.CONSOLE, "RuneProfile", "Updating your RuneProfile...", "RuneProfile");
+        tryStartSync();
     }
 
     @Subscribe
