@@ -2,6 +2,7 @@ package com.runeprofile.autosync;
 
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
+import com.runeprofile.data.Manifest;
 import com.runeprofile.data.activities.ValuableDropActivity;
 import com.runeprofile.utils.ItemUtils;
 import com.runeprofile.utils.PlayerState;
@@ -15,11 +16,14 @@ import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.http.api.loottracker.LootRecordType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
@@ -42,6 +46,9 @@ public class ValuableDropSubscriber {
 
     @Inject
     private RuneProfileConfig config;
+
+    @Inject
+    private ManifestService manifestService;
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isEnabled() {
@@ -68,12 +75,16 @@ public class ValuableDropSubscriber {
     private void handleItemsReceived(Collection<ItemStack> items) {
         List<ValuableDropActivity> valuableDrops = new ArrayList<>();
 
+        Manifest manifest = manifestService.getManifest();
+        Map<Integer, Integer> valueOverrides = buildValueOverrides(manifest);
+        int threshold = resolveThreshold(manifest);
+
         for (ItemStack itemStack : items) {
             ItemComposition item = itemManager.getItemComposition(itemStack.getId());
             int itemId = ItemUtils.getUnnotedItemId(item);
-            int value = ItemUtils.getPerceivedItemValue(itemManager, itemId);
+            int value = ItemUtils.getPerceivedItemValue(itemManager, itemId, valueOverrides);
 
-            if (value >= ItemUtils.VALUABLE_DROP_THRESHOLD) {
+            if (value >= threshold) {
                 for (int i = 0; i < itemStack.getQuantity(); i++) {
                     log.debug("Valuable drop detected: {} (ID: {}, Value: {})", item.getName(), itemId, value);
                     // Add each item as a separate drop
@@ -87,5 +98,29 @@ public class ValuableDropSubscriber {
         }
 
         scheduledExecutorService.execute(() -> plugin.addActivitiesAsync(valuableDrops));
+    }
+
+    /**
+     * Builds the item-id → value overrides from the manifest's special valuable
+     * drops, or returns {@code null} when no manifest is loaded yet (values then
+     * come straight from the GE price).
+     */
+    private @Nullable Map<Integer, Integer> buildValueOverrides(@Nullable Manifest manifest) {
+        if (manifest == null) {
+            return null;
+        }
+
+        Map<Integer, Integer> overrides = new HashMap<>();
+        for (Manifest.SpecialValuableDrop drop : manifest.getSpecialValuableDrops()) {
+            overrides.put(drop.getItemId(), drop.getValue());
+        }
+        return overrides;
+    }
+
+    private int resolveThreshold(@Nullable Manifest manifest) {
+        if (manifest != null && manifest.getValuableDropThreshold() > 0) {
+            return manifest.getValuableDropThreshold();
+        }
+        return ItemUtils.VALUABLE_DROP_THRESHOLD;
     }
 }

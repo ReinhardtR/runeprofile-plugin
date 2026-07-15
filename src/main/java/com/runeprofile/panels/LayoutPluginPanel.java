@@ -11,11 +11,13 @@ import java.awt.*;
 public class LayoutPluginPanel extends JPanel {
     private final ProfileTabPanel profileTabPanel;
     private final DropsTabPanel dropsTabPanel;
+    private final SearchTabPanel searchTabPanel;
 
     @Inject
-    public LayoutPluginPanel(ProfileTabPanel profileTabPanel, DropsTabPanel dropsTabPanel) {
+    public LayoutPluginPanel(ProfileTabPanel profileTabPanel, DropsTabPanel dropsTabPanel, SearchTabPanel searchTabPanel) {
         this.profileTabPanel = profileTabPanel;
         this.dropsTabPanel = dropsTabPanel;
+        this.searchTabPanel = searchTabPanel;
 
         setLayout(new BorderLayout());
 
@@ -37,8 +39,15 @@ public class LayoutPluginPanel extends JPanel {
             return true;
         });
 
+        MaterialTab searchTab = new MaterialTab("Search", tabGroup, searchTabPanel);
+        searchTab.setOnSelectEvent(() -> {
+            searchTabPanel.refresh(false);
+            return true;
+        });
+
         tabGroup.addTab(profileTab);
         tabGroup.addTab(dropsTab);
+        tabGroup.addTab(searchTab);
         tabGroup.select(profileTab);
 
         JScrollPane scrollPane = new JScrollPane(display);
@@ -53,11 +62,13 @@ public class LayoutPluginPanel extends JPanel {
     public void startUp() {
         profileTabPanel.startUp();
         dropsTabPanel.startUp();
+        searchTabPanel.startUp();
     }
 
     public void shutDown() {
         profileTabPanel.shutDown();
         dropsTabPanel.shutDown();
+        searchTabPanel.shutDown();
     }
 
     /**

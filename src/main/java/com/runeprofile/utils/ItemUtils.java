@@ -1,55 +1,37 @@
 package com.runeprofile.utils;
 
 
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.game.ItemManager;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 public class ItemUtils {
     public static final String ITEM_CACHE_BASE_URL = "https://static.runelite.net/cache/item/";
 
+    /**
+     * Default cutoff used until the manifest is loaded. The backend can override
+     * this via the manifest.
+     */
     public static final int VALUABLE_DROP_THRESHOLD = 1_000_000;
-
-    @Getter
-    @RequiredArgsConstructor
-    public enum ClanBroadcastValue {
-        BELLATOR_VESTIGE(28279, 5_000_000),
-        MAGUS_VESTIGE(28281, 5_000_000),
-        VENATOR_VESTIGE(28283, 5_000_000),
-        ULTOR_VESTIGE(28285, 5_000_000),
-
-        NOXIOUS_POINT(29790, 10_000_000),
-        NOXIOUS_BLADE(29792, 10_000_000),
-        NOXIOUS_POMMEL(29794, 10_000_000),
-        ARAXYTE_FANG(29799, 50_000_000),
-
-        MOKHAIOTL_CLOTH(31109, 75_000_000);
-
-        private final int itemId;
-        private final int value;
-
-        public static @Nullable ClanBroadcastValue getByItemId(int itemId) {
-            for (ClanBroadcastValue value : ClanBroadcastValue.values()) {
-                if (value.getItemId() == itemId) {
-                    return value;
-                }
-            }
-            return null;
-        }
-    }
 
     public static int getUnnotedItemId(@NonNull ItemComposition comp) {
         return isItemNoted(comp) ? comp.getLinkedNoteId() : comp.getId();
     }
 
-    public static int getPerceivedItemValue(@NonNull ItemManager itemManager, int itemId) {
-        ClanBroadcastValue clanBroadcastValue = ClanBroadcastValue.getByItemId(itemId);
-        if (clanBroadcastValue != null) {
-            return clanBroadcastValue.getValue();
+    /**
+     * Resolves the value used to decide whether a drop is valuable. Items present
+     * in {@code valueOverrides} (the special valuable drops served by the manifest)
+     * use their fixed value; everything else uses the live GE price.
+     */
+    public static int getPerceivedItemValue(@NonNull ItemManager itemManager, int itemId, @Nullable Map<Integer, Integer> valueOverrides) {
+        if (valueOverrides != null) {
+            Integer override = valueOverrides.get(itemId);
+            if (override != null) {
+                return override;
+            }
         }
         return itemManager.getItemPriceWithSource(itemId, true);
     }

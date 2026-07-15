@@ -1,14 +1,8 @@
 package com.runeprofile.autosync;
 
 import com.runeprofile.RuneProfileApiClient;
-import com.runeprofile.RuneProfileConfig;
-import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.data.Manifest;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
-
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -17,17 +11,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Keeps a cached copy of the backend manifest. The manifest drives several
+ * features (command suggestions, combat achievement varps and the special
+ * valuable-drop overrides), so it is refreshed for the lifetime of the plugin
+ * regardless of individual feature toggles.
+ */
 @Slf4j
 @Singleton
 public class ManifestService {
     @Inject
-    private EventBus eventBus;
-
-    @Inject
     private ScheduledExecutorService scheduledExecutorService;
-
-    @Inject
-    private RuneProfileConfig config;
 
     @Inject
     private RuneProfileApiClient apiClient;
@@ -36,33 +30,11 @@ public class ManifestService {
     private Manifest cachedManifest;
 
     public void startUp() {
-        eventBus.register(this);
         startManifestRefreshTask();
     }
 
     public void shutDown() {
-        eventBus.unregister(this);
         stopManifestRefreshTask();
-    }
-
-    public void reset() {
-        stopManifestRefreshTask();
-        startManifestRefreshTask();
-    }
-
-    public boolean isEnabled() {
-        return config.commandSuggestionOverlay();
-    }
-
-    @Subscribe
-    public void onConfigChanged(ConfigChanged event) {
-        if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP)) return;
-
-        if (isEnabled()) {
-            reset();
-        } else {
-            shutDown();
-        }
     }
 
     public void startManifestRefreshTask() {

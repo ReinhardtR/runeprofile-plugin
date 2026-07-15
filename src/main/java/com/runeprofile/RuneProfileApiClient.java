@@ -159,6 +159,14 @@ public class RuneProfileApiClient {
                 .thenApply((response) -> handleResponse(response, UpdateProfileResult.class));
     }
 
+    public CompletableFuture<ProfileSearchResult[]> searchProfiles(String query) {
+        HttpUrl url = buildApiUrl("profiles").newBuilder()
+                .addQueryParameter("q", query)
+                .build();
+        return getHttpRequestAsync(url)
+                .thenApplyAsync((response) -> handleResponse(response, ProfileSearchResult[].class));
+    }
+
     public CompletableFuture<AccountInfo> getAccountAsync(String accountHash) {
         HttpUrl url = buildApiUrl("profiles", "accounts", accountHash);
         return getHttpRequestAsync(url)
