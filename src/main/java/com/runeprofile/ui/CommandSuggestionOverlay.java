@@ -99,8 +99,25 @@ public class CommandSuggestionOverlay extends OverlayPanel {
 
         // Only show suggestions after "!log " is typed
         if (lowerInput.startsWith(command.toLowerCase() + " ")) {
-            // Show page name/alias suggestions
-            return this.getPageSuggestions(input.substring(command.length()).trim());
+            String remainder = input.substring(command.length()).trim();
+            String lowerRemainder = remainder.toLowerCase();
+
+            // "!log missing <page>" — suggest pages for the part after the keyword
+            if (lowerRemainder.startsWith("missing ")) {
+                return this.getPageSuggestions(remainder.substring("missing ".length()).trim());
+            }
+
+            List<String> suggestions = new ArrayList<>(this.getPageSuggestions(remainder));
+
+            // Offer the "missing" keyword itself while the user is still typing it
+            if (!remainder.isEmpty() && "missing".startsWith(lowerRemainder)) {
+                suggestions.add(0, "missing");
+                if (suggestions.size() > MAX_SUGGESTIONS) {
+                    suggestions = suggestions.subList(0, MAX_SUGGESTIONS);
+                }
+            }
+
+            return suggestions;
         }
 
         return new ArrayList<>();
@@ -152,7 +169,12 @@ public class CommandSuggestionOverlay extends OverlayPanel {
         String command = "!log";
 
         if (lowerInput.startsWith(command.toLowerCase() + " ")) {
-            return input.substring(command.length()).trim();
+            String remainder = input.substring(command.length()).trim();
+            // Highlight the page-name portion, not the "missing" keyword
+            if (remainder.toLowerCase().startsWith("missing ")) {
+                return remainder.substring("missing ".length()).trim();
+            }
+            return remainder;
         }
 
         return input.trim();

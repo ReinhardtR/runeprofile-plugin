@@ -94,6 +94,21 @@ public class CollectionLogCommand {
             return;
         }
 
+        // "!log missing <page>" shows only the items the player is still missing from the page.
+        // No collection log page or alias starts with the word "missing", so a leading "missing "
+        // token is unambiguously the keyword rather than part of a page name.
+        boolean missingOnly = false;
+        if (pageName.regionMatches(true, 0, "missing ", 0, "missing ".length())) {
+            missingOnly = true;
+            pageName = pageName.substring("missing ".length()).trim();
+            if (pageName.isEmpty()) {
+                log.debug("Invalid page name");
+                return;
+            }
+        }
+
+        final boolean showMissing = missingOnly;
+
         String senderName = chatMessage.getType().equals(ChatMessageType.PRIVATECHATOUT)
                 ? client.getLocalPlayer().getName()
                 : Text.sanitize(chatMessage.getName());
@@ -111,7 +126,8 @@ public class CollectionLogCommand {
                 List<CollectionLogItem> items = page.getItems();
                 StringBuilder itemBuilder = new StringBuilder();
                 for (CollectionLogItem item : items) {
-                    if (item.getQuantity() < 1) continue;
+                    // Obtained view keeps items with quantity > 0; missing view keeps quantity < 1.
+                    if (showMissing ? item.getQuantity() >= 1 : item.getQuantity() < 1) continue;
 
                     String itemString = "<img=" + loadedItemIcons.get(item.getId()) + ">";
 
@@ -130,7 +146,17 @@ public class CollectionLogCommand {
                 int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
                 int totalItemsCount = items.size();
 
-                final String replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + " : " + itemBuilder;
+                final String replacementMessage;
+                if (showMissing) {
+                    int missingItemsCount = totalItemsCount - obtainedItemsCount;
+                    if (missingItemsCount == 0) {
+                        replacementMessage = page.getName() + " - completed (" + totalItemsCount + "/" + totalItemsCount + ")";
+                    } else {
+                        replacementMessage = page.getName() + " - missing (" + missingItemsCount + "/" + totalItemsCount + ") : " + itemBuilder;
+                    }
+                } else {
+                    replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + " : " + itemBuilder;
+                }
                 updateChatMessage(chatMessage, replacementMessage);
             });
         });
