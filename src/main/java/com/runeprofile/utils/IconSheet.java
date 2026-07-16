@@ -3,6 +3,7 @@ package com.runeprofile.utils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.runeprofile.RuneProfilePlugin;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
@@ -25,6 +26,7 @@ import java.util.Map;
  */
 @Slf4j
 public final class IconSheet {
+    private final Gson gson;
     private final String resourcePath;
 
     private Map<String, String> base64ByKey;
@@ -32,7 +34,8 @@ public final class IconSheet {
     // Decoded icons, including null for missing keys, so each key is decoded once.
     private final Map<String, ImageIcon> cache = new HashMap<>();
 
-    public IconSheet(String resourcePath) {
+    public IconSheet(@NonNull Gson gson, String resourcePath) {
+        this.gson = gson;
         this.resourcePath = resourcePath;
     }
 
@@ -68,19 +71,19 @@ public final class IconSheet {
 
     private Map<String, String> base64ByKey() {
         if (base64ByKey == null) {
-            base64ByKey = load(resourcePath);
+            base64ByKey = load(gson, resourcePath);
         }
         return base64ByKey;
     }
 
-    private static Map<String, String> load(String resourcePath) {
+    private static Map<String, String> load(Gson gson, String resourcePath) {
         try (InputStream in = RuneProfilePlugin.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
                 log.debug("Icon sheet not found on classpath: {}", resourcePath);
                 return Collections.emptyMap();
             }
             try (Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
-                Map<String, String> icons = new Gson().fromJson(reader, new TypeToken<Map<String, String>>() {
+                Map<String, String> icons = gson.fromJson(reader, new TypeToken<Map<String, String>>() {
                 }.getType());
                 return icons != null ? icons : Collections.emptyMap();
             }

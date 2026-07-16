@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SearchTabPanel extends JPanel {
     private final RuneProfileApiClient apiClient;
     private final UsernameAutocompleter usernameAutocompleter;
+    private final AccountTypeIcon accountTypeIcon;
 
     private final IconTextField searchField = new IconTextField();
     private final JPanel resultsPanel = new JPanel();
@@ -39,9 +40,10 @@ public class SearchTabPanel extends JPanel {
     private final AtomicInteger requestSeq = new AtomicInteger();
 
     @Inject
-    public SearchTabPanel(RuneProfileApiClient apiClient, UsernameAutocompleter usernameAutocompleter) {
+    public SearchTabPanel(RuneProfileApiClient apiClient, UsernameAutocompleter usernameAutocompleter, AccountTypeIcon accountTypeIcon) {
         this.apiClient = apiClient;
         this.usernameAutocompleter = usernameAutocompleter;
+        this.accountTypeIcon = accountTypeIcon;
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -162,7 +164,7 @@ public class SearchTabPanel extends JPanel {
         row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         row.setToolTipText("Open " + result.getUsername() + " in browser");
 
-        ImageIcon typeIcon = AccountTypeIcon.getByKey(accountTypeKey(result));
+        ImageIcon typeIcon = accountTypeIcon.getByKey(accountTypeKey(result));
         if (typeIcon != null) {
             JLabel iconLabel = new JLabel(typeIcon);
             iconLabel.setVerticalAlignment(SwingConstants.CENTER);
