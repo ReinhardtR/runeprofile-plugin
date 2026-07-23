@@ -238,11 +238,7 @@ public class RuneProfileApiClient {
 
     public CompletableFuture<Manifest> getManifest() {
         HttpUrl url = buildApiUrl("manifest");
-        // Bypass RuneLite's persistent OkHttp disk cache: it survives client
-        // restarts, so a long server-side max-age would pin every player to a
-        // stale manifest (missing e.g. new combat achievement varps) until it
-        // expires. This is an hourly background request, so always hitting
-        // the network is fine.
+        // Bypass RuneLite's persistent OkHttp disk cache
         Request request = buildApiRequest(url, Request.Builder::get)
                 .cacheControl(CacheControl.FORCE_NETWORK)
                 .build();
