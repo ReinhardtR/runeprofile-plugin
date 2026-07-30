@@ -13,7 +13,6 @@ import com.runeprofile.ui.*;
 import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.RuneProfileApiException;
 import com.runeprofile.utils.Utils;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.client.callback.ClientThread;
@@ -23,7 +22,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,11 +33,6 @@ import java.util.concurrent.TimeUnit;
 )
 public class RuneProfilePlugin extends Plugin {
     public static final String CONFIG_GROUP = "runeprofile";
-
-    @Inject
-    @Named("developerMode")
-    @Getter
-    private boolean developerMode;
 
     @Inject
     private Client client;

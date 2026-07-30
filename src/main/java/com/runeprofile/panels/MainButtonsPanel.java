@@ -1,7 +1,6 @@
 package com.runeprofile.panels;
 
 import com.runeprofile.RuneProfilePlugin;
-import com.runeprofile.utils.DevTools;
 import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -13,7 +12,7 @@ import java.awt.*;
 @Slf4j
 public class MainButtonsPanel extends JPanel {
     @Inject
-    public MainButtonsPanel(RuneProfilePlugin plugin, Client client, DevTools devTools) {
+    public MainButtonsPanel(RuneProfilePlugin plugin, Client client) {
         setLayout(new BorderLayout());
         JPanel wrapper = new JPanel(new GridLayout(0, 1, 0, 6));
 
@@ -45,22 +44,6 @@ public class MainButtonsPanel extends JPanel {
             }
         });
         wrapper.add(deleteProfileButton);
-
-        if (plugin.isDeveloperMode()) {
-            // DEV ONLY - generate hiscores icons
-            JButton generateHiscoreIcons = createButton("DEV: Hiscores Icons");
-            generateHiscoreIcons.addActionListener(e -> {
-                devTools.generateHiscoreIconsJson();
-            });
-            wrapper.add(generateHiscoreIcons);
-
-            // DEV ONLY - generate clan rank icons
-            JButton generateClanRankIcons = createButton("DEV: Clan Rank Icons");
-            generateClanRankIcons.addActionListener(e -> {
-                devTools.generateClanRankIconsJson();
-            });
-            wrapper.add(generateClanRankIcons);
-        }
 
         add(wrapper, BorderLayout.NORTH);
     }

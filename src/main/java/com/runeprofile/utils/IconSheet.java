@@ -21,7 +21,8 @@ import java.util.Map;
 
 /**
  * A classpath JSON map of base64-encoded PNGs (the shape produced by
- * {@link DevTools} and shared with the website), decoded to {@link ImageIcon}s
+ * the runeprofile repo's cache pipeline and shared with the website),
+ * decoded to {@link ImageIcon}s
  * on demand and cached. The JSON is loaded lazily on first access.
  */
 @Slf4j
