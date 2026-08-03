@@ -8,10 +8,7 @@ import org.junit.Test;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -254,21 +251,6 @@ public class GlbWriterTest {
         GlbWriter.write(empty, id -> null, new GlbWriter.Options());
     }
 
-    /**
-     * Writes a sample model to build/ so a renderer can be worked on against a
-     * real file without running the game - drop it on the admin model viewer.
-     */
-    @Test
-    public void writesASampleForTheViewer() throws IOException {
-        final byte[] glb = GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
-                new GlbWriter.Options().modelName("sample"));
-
-        final File directory = new File("build/sample-models");
-        assertTrue(directory.exists() || directory.mkdirs());
-        try (OutputStream out = new FileOutputStream(new File(directory, "sample.glb"))) {
-            out.write(glb);
-        }
-    }
 
     private static JsonObject parseJson(byte[] glb) {
         final ByteBuffer buffer = ByteBuffer.wrap(glb).order(ByteOrder.LITTLE_ENDIAN);

@@ -3,6 +3,7 @@ package com.runeprofile;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.runeprofile.data.*;
+import com.runeprofile.utils.DevMode;
 import com.runeprofile.data.activities.ActivitiesResponse;
 import com.runeprofile.data.activities.ActivityRecord;
 import com.runeprofile.utils.RuneProfileApiException;
@@ -39,13 +40,12 @@ public class RuneProfileApiClient {
 
     @Inject
     public RuneProfileApiClient() {
-        boolean isDevMode = false;
-
         String runeliteVersion = RuneLiteProperties.getVersion();
         userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;
 
-        //noinspection ConstantValue
-        baseUrl = isDevMode
+        // A development client talks to a local API, so it cannot write to real
+        // profiles. It needs one running on 8787; without it, syncs fail.
+        baseUrl = DevMode.ENABLED
                 ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
                 : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
     }
