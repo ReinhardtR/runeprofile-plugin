@@ -106,6 +106,9 @@ public class RuneProfilePlugin extends Plugin {
     @Inject
     private CommandSuggestionOverlay commandSuggestionOverlay;
 
+    @Inject
+    private ModelDumpCommand modelDumpCommand;
+
     private RuneProfilePanel runeProfilePanel;
 
     @Provides
@@ -140,6 +143,7 @@ public class RuneProfilePlugin extends Plugin {
         chatPlayerMenuOption.startUp();
         collectionLogCommand.startUp();
         commandSuggestionOverlay.startUp();
+        modelDumpCommand.startUp();
     }
 
     @Override
@@ -166,6 +170,7 @@ public class RuneProfilePlugin extends Plugin {
         chatPlayerMenuOption.shutDown();
         collectionLogCommand.shutDown();
         commandSuggestionOverlay.shutDown();
+        modelDumpCommand.shutDown();
     }
 
     public CompletableFuture<UpdateProfileResult> updateProfileAsync(boolean isAutoSync, String eventSource) {

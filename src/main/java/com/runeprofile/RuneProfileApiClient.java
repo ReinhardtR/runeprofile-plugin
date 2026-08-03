@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class RuneProfileApiClient {
     private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
+    private static final MediaType MODEL_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("model/gltf-binary"));
 
     @Inject
     private OkHttpClient okHttpClient;
@@ -36,15 +37,22 @@ public class RuneProfileApiClient {
     @Inject
     private Gson gson;
 
+    /**
+     * Set with {@code -Druneprofile.localApi}, or {@code ./gradlew runClient
+     * -PlocalApi}, to talk to a backend on localhost:8787.
+     *
+     * Deliberately not inferred from dev mode: a dev client is often the
+     * only way to reproduce something against real data, and that should not
+     * silently require a local backend.
+     */
+    private static final boolean LOCAL_API = Boolean.getBoolean("runeprofile.localApi");
+
     @Inject
     public RuneProfileApiClient() {
-        boolean isDevMode = false;
-
         String runeliteVersion = RuneLiteProperties.getVersion();
         userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;
 
-        //noinspection ConstantValue
-        baseUrl = isDevMode
+        baseUrl = LOCAL_API
                 ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
                 : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
     }
@@ -198,18 +206,18 @@ public class RuneProfileApiClient {
     public CompletableFuture<Void> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 
-        RequestBody modelFile = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
+        RequestBody modelFile = RequestBody.create(MODEL_MEDIA_TYPE, data.getModel());
 
         MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("accountId", data.getAccountHash())
-                .addFormDataPart("model", "model.ply", modelFile);
+                .addFormDataPart("model", "model.glb", modelFile);
 
         @Nullable
         byte[] petModel = data.getPetModel();
         if (petModel != null) {
-            RequestBody petFile = RequestBody.create(MediaType.parse("model/ply"), petModel);
-            bodyBuilder.addFormDataPart("petModel", "pet.ply", petFile);
+            RequestBody petFile = RequestBody.create(MODEL_MEDIA_TYPE, petModel);
+            bodyBuilder.addFormDataPart("petModel", "pet.glb", petFile);
         }
 
         MultipartBody body = bodyBuilder.build();

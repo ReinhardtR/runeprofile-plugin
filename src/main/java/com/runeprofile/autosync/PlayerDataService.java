@@ -2,7 +2,7 @@ package com.runeprofile.autosync;
 
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.data.*;
-import com.runeprofile.modelexporter.ModelExporter;
+import com.runeprofile.modelexporter.GlbExporter;
 import com.runeprofile.utils.AccountHash;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -201,7 +201,7 @@ public class PlayerDataService {
 
             byte[] modelBytes = null;
             try {
-                modelBytes = ModelExporter.toBytes(client, model);
+                modelBytes = GlbExporter.toBytes(client, model, "player");
             } catch (IOException e) {
                 dataFuture.completeExceptionally(e);
                 return;
@@ -213,7 +213,7 @@ public class PlayerDataService {
             byte[] petModelBytes = null;
             if (petModel != null) {
                 try {
-                    petModelBytes = ModelExporter.toBytes(client, petModel);
+                    petModelBytes = GlbExporter.toBytes(client, petModel, "pet");
                 } catch (IOException e) {
                     dataFuture.completeExceptionally(e);
                     return;
