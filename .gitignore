@@ -10,3 +10,5 @@ nbproject/
 hiscore-icons.json
 clan-rank-icons.json
 item-icons.json
+# Claude Code
+.claude/worktrees/
