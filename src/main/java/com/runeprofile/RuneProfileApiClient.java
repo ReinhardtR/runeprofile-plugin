@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class RuneProfileApiClient {
     private static final MediaType JSON_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("application/json; charset=utf-8"));
+    private static final MediaType MODEL_MEDIA_TYPE = Objects.requireNonNull(MediaType.parse("model/gltf-binary"));
 
     @Inject
     private OkHttpClient okHttpClient;
@@ -198,18 +199,21 @@ public class RuneProfileApiClient {
     public CompletableFuture<Void> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 
-        RequestBody modelFile = RequestBody.create(MediaType.parse("model/ply"), data.getModel());
+        // The API keys off the file extension, and serves whatever was last
+        // uploaded, so a profile synced by an older plugin keeps its .ply until
+        // its owner syncs again. Readers tell the formats apart by magic bytes.
+        RequestBody modelFile = RequestBody.create(MODEL_MEDIA_TYPE, data.getModel());
 
         MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("accountId", data.getAccountHash())
-                .addFormDataPart("model", "model.ply", modelFile);
+                .addFormDataPart("model", "model.glb", modelFile);
 
         @Nullable
         byte[] petModel = data.getPetModel();
         if (petModel != null) {
-            RequestBody petFile = RequestBody.create(MediaType.parse("model/ply"), petModel);
-            bodyBuilder.addFormDataPart("petModel", "pet.ply", petFile);
+            RequestBody petFile = RequestBody.create(MODEL_MEDIA_TYPE, petModel);
+            bodyBuilder.addFormDataPart("petModel", "pet.glb", petFile);
         }
 
         MultipartBody body = bodyBuilder.build();
