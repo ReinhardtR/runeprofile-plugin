@@ -10,18 +10,6 @@ import java.util.Map;
 
 /**
  * Exports a game {@link Model} as a binary glTF.
- * <p>
- * Replaces the PLY the profile used to ship, which had no way to carry a
- * texture, per-face transparency or face render priority: a fire cape came out
- * as a single flat average colour. Profiles synced before the switch still serve
- * their PLY, so readers tell the two apart by their magic bytes.
- * <p>
- * Covers the same geometry the PLY does, which is the actor's own model. The
- * effects the game draws next to an actor - emote flourishes, spell impacts -
- * are separate models reachable through {@code Actor.getSpotAnims()}, and are
- * deliberately left out so both formats describe the same thing.
- * <p>
- * Must be called on the client thread: it reads live model and texture state.
  */
 public final class GlbExporter {
     private GlbExporter() {

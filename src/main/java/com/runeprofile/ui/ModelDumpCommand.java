@@ -26,15 +26,7 @@ import java.util.TreeSet;
 
 /**
  * Development only {@code ::rpmodel} command that writes the local player's
- * model to {@code .runelite/runeprofile/models/} so it can be opened in the
- * model viewer under {@code tools/model-viewer} or any glTF viewer.
- * <p>
- * Writes the same .glb a real sync uploads, so what the viewer shows is what a
- * profile will show.
- * <p>
- * Active only when assertions are enabled, which is true for a development
- * client (RuneLite requires {@code -ea} to load a plugin this way) and never
- * for a released build, so it cannot ship switched on.
+ * model to {@code .runelite/runeprofile/models/}.
  */
 @Slf4j
 public class ModelDumpCommand {
@@ -42,7 +34,6 @@ public class ModelDumpCommand {
     private static final String DIRECTORY_NAME = "runeprofile";
     private static final String MODELS_DIRECTORY_NAME = "models";
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
-
 
     @Inject
     private EventBus eventBus;
@@ -156,8 +147,7 @@ public class ModelDumpCommand {
         // no real model has reached.
         notes.append(" verts=").append(model.getVerticesCount());
 
-        // Faces the exporter drops on purpose. The PLY exporter keeps every
-        // face, so these are the only ones the GLB can be missing.
+        // Faces the exporter skips on purpose, and why.
         int hidden = 0;
         int invisible = 0;
         int nearlyInvisible = 0;

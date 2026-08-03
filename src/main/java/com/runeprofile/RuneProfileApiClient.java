@@ -199,9 +199,6 @@ public class RuneProfileApiClient {
     public CompletableFuture<Void> updateModelAsync(PlayerModelData data) {
         HttpUrl url = buildApiUrl("profiles", "models");
 
-        // The API keys off the file extension, and serves whatever was last
-        // uploaded, so a profile synced by an older plugin keeps its .ply until
-        // its owner syncs again. Readers tell the formats apart by magic bytes.
         RequestBody modelFile = RequestBody.create(MODEL_MEDIA_TYPE, data.getModel());
 
         MultipartBody.Builder bodyBuilder = new MultipartBody.Builder()

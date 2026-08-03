@@ -255,8 +255,8 @@ public class GlbWriterTest {
     }
 
     /**
-     * Writes a sample model to build/ so the viewer under tools/model-viewer can
-     * be developed against a real file without needing to run the game.
+     * Writes a sample model to build/ so a renderer can be worked on against a
+     * real file without running the game - drop it on the admin model viewer.
      */
     @Test
     public void writesASampleForTheViewer() throws IOException {
