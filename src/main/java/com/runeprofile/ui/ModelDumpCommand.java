@@ -1,6 +1,7 @@
 package com.runeprofile.ui;
 
 import com.runeprofile.modelexporter.GlbExporter;
+import com.runeprofile.utils.DevMode;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -42,7 +43,6 @@ public class ModelDumpCommand {
     private static final String MODELS_DIRECTORY_NAME = "models";
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
-    private static final boolean ENABLED = assertionsEnabled();
 
     @Inject
     private EventBus eventBus;
@@ -53,22 +53,14 @@ public class ModelDumpCommand {
     @Inject
     private ClientThread clientThread;
 
-    @SuppressWarnings("AssertWithSideEffects")
-    private static boolean assertionsEnabled() {
-        boolean enabled = false;
-        //noinspection ConstantConditions
-        assert enabled = true;
-        return enabled;
-    }
-
     public void startUp() {
-        if (ENABLED) {
+        if (DevMode.ENABLED) {
             eventBus.register(this);
         }
     }
 
     public void shutDown() {
-        if (ENABLED) {
+        if (DevMode.ENABLED) {
             eventBus.unregister(this);
         }
     }
