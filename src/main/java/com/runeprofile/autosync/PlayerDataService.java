@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -86,64 +87,80 @@ public class PlayerDataService {
             PlayerData playerData = new PlayerData();
 
             Player player = client.getLocalPlayer();
-            String username = player.getName();
 
-            // general
             playerData.setId(AccountHash.getHashed(client));
-            playerData.setUsername(username);
+            playerData.setUsername(player.getName());
             playerData.setAccountType(client.getVarbitValue(VarbitID.IRONMAN));
-
-            // clan
             playerData.setClan(getPlayerClanData(player));
-
-            // group
             playerData.setGroupName(getPlayerGroupName());
 
-            // skills
-            for (Skill skill : Skill.values()) {
-                String name = skill.getName();
-                int xp = client.getSkillExperience(skill);
-                playerData.getSkills().put(name, xp);
-            }
+            collectSkills(playerData);
+            collectQuests(playerData, manifest);
+            collectCombatAchievementVarps(playerData, manifest);
+            collectAchievementDiaryTiers(playerData);
 
-            // quests
-            for (Quest quest : Quest.values()) {
-                int id = quest.getId();
-                QuestState stateEnum = quest.getState(client);
-                int state = 0;
-                if (stateEnum == QuestState.IN_PROGRESS) {
-                    state = 1;
-                } else if (stateEnum == QuestState.FINISHED) {
-                    state = 2;
-                }
-                playerData.getQuests().put(id, state);
-            }
-
-            // combat achievement varps
-            if (manifest != null && manifest.getCombatAchievementVarps().length > 0) {
-                for (int varpId : manifest.getCombatAchievementVarps()) {
-                    int value = client.getVarpValue(varpId);
-                    playerData.getCombatAchievementVarps().put(varpId, value);
-                }
-            }
-
-            // achievement diary tiers
-            for (AchievementDiary diary : AchievementDiary.values()) {
-                int areaId = diary.getId();
-                int[] completedCounts = diary.getTiersCompletedCount(client);
-                for (int tierIndex = 0; tierIndex < completedCounts.length; tierIndex++) {
-                    int completedCount = completedCounts[tierIndex];
-                    playerData.getAchievementDiaryTiers().add(new AchievementDiaryTierData(areaId, tierIndex, completedCount));
-                }
-            }
-
-            // items
+            // Unlike the rest, clog items are accumulated as the player sees them
+            // rather than read from the client here.
             playerData.setItems(clogItems);
 
             log.debug("Player Data: {}", playerData);
             playerDataFuture.complete(playerData);
         });
         return playerDataFuture;
+    }
+
+    private void collectSkills(PlayerData playerData) {
+        for (Skill skill : Skill.values()) {
+            playerData.getSkills().put(skill.getName(), client.getSkillExperience(skill));
+        }
+    }
+
+    /**
+     * Records the state of every quest the manifest lists, falling back to RuneLite's Quest enum.
+     */
+    private void collectQuests(PlayerData playerData, @Nullable Manifest manifest) {
+        int[] questIds = manifest != null && manifest.getQuestIds().length > 0
+                ? manifest.getQuestIds()
+                : Arrays.stream(Quest.values()).mapToInt(Quest::getId).toArray();
+
+        for (int questId : questIds) {
+            try {
+                // What Quest#getState does internally: the script leaves the status on the int stack.
+                client.runScript(ScriptID.QUEST_STATUS_GET, questId);
+                playerData.getQuests().put(questId, fromQuestStatus(client.getIntStack()[0]));
+            } catch (Exception e) {
+                log.debug("Unable to read state of quest {}: {}", questId, e.toString());
+            }
+        }
+    }
+
+    /** Maps a QUEST_STATUS_GET result to RuneProfile's state encoding. */
+    private static int fromQuestStatus(int status) {
+        // Same mapping Quest#getState applies: 1 is not started, 2 is finished, and
+        // every other value means the quest is underway.
+        if (status == 1) return 0;
+        if (status == 2) return 2;
+        return 1;
+    }
+
+    /** No-op without a manifest: the varps to read are only known from it. */
+    private void collectCombatAchievementVarps(PlayerData playerData, @Nullable Manifest manifest) {
+        if (manifest == null) return;
+
+        for (int varpId : manifest.getCombatAchievementVarps()) {
+            playerData.getCombatAchievementVarps().put(varpId, client.getVarpValue(varpId));
+        }
+    }
+
+    private void collectAchievementDiaryTiers(PlayerData playerData) {
+        for (AchievementDiary diary : AchievementDiary.values()) {
+            int areaId = diary.getId();
+            int[] completedCounts = diary.getTiersCompletedCount(client);
+            for (int tierIndex = 0; tierIndex < completedCounts.length; tierIndex++) {
+                playerData.getAchievementDiaryTiers()
+                        .add(new AchievementDiaryTierData(areaId, tierIndex, completedCounts[tierIndex]));
+            }
+        }
     }
 
     public @Nullable PlayerClanData getPlayerClanData(Player player) {

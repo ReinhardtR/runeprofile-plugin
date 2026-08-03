@@ -17,6 +17,13 @@ public class Manifest {
     int[] combatAchievementVarps = new int[0];
 
     /**
+     * Quest ids to poll for state, regenerated from the game cache by the backend.
+     * Lets new quests be tracked the day they release instead of waiting for them
+     * to appear in RuneLite's Quest enum. Empty means "fall back to the enum".
+     */
+    int[] questIds = new int[0];
+
+    /**
      * Minimum gp value for a drop to be recorded as valuable. Defaults to 0 so a
      * missing/old manifest never causes the plugin to record everything; callers
      * fall back to their own constant when this is unset.
