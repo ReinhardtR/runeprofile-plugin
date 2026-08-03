@@ -30,3 +30,24 @@ sourceCompatibility = "1.8"
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+/**
+ * Launches a development client with this plugin side-loaded.
+ *
+ * Assertions are on because RuneLite requires -ea to load a plugin this way, and
+ * DevMode reads that to decide it is a dev client.
+ *
+ *   ./gradlew runClient              production API
+ *   ./gradlew runClient -PlocalApi   a backend on localhost:8787
+ */
+tasks.register('runClient', JavaExec) {
+    group = 'application'
+    description = 'Runs a dev client with the plugin loaded.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.runeprofile.RuneProfilePluginTest'
+    enableAssertions = true
+
+    if (project.hasProperty('localApi')) {
+        systemProperty 'runeprofile.localApi', 'true'
+    }
+}

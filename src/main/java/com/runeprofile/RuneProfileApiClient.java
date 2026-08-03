@@ -3,7 +3,6 @@ package com.runeprofile;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.runeprofile.data.*;
-import com.runeprofile.utils.DevMode;
 import com.runeprofile.data.activities.ActivitiesResponse;
 import com.runeprofile.data.activities.ActivityRecord;
 import com.runeprofile.utils.RuneProfileApiException;
@@ -38,14 +37,22 @@ public class RuneProfileApiClient {
     @Inject
     private Gson gson;
 
+    /**
+     * Set with {@code -Druneprofile.localApi}, or {@code ./gradlew runClient
+     * -PlocalApi}, to talk to a backend on localhost:8787.
+     *
+     * Deliberately not inferred from dev mode: a dev client is often the
+     * only way to reproduce something against real data, and that should not
+     * silently require a local backend.
+     */
+    private static final boolean LOCAL_API = Boolean.getBoolean("runeprofile.localApi");
+
     @Inject
     public RuneProfileApiClient() {
         String runeliteVersion = RuneLiteProperties.getVersion();
         userAgent = "RuneLite:" + runeliteVersion + "," + "Client:" + version;
 
-        // A development client talks to a local API, so it cannot write to real
-        // profiles. It needs one running on 8787; without it, syncs fail.
-        baseUrl = DevMode.ENABLED
+        baseUrl = LOCAL_API
                 ? new HttpUrl.Builder().scheme("http").host("localhost").port(8787).build()
                 : new HttpUrl.Builder().scheme("https").host("api.runeprofile.com").build();
     }
