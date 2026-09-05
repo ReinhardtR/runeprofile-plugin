@@ -81,6 +81,10 @@ public class ProfileTabPanel extends JPanel {
         refresh(true);
     }
 
+    public void markStale() {
+        loadedOnce = false;
+    }
+
     public void refresh(boolean force) {
         if (!force && loadedOnce) return;
         if (!fetchInFlight.compareAndSet(false, true)) return;
@@ -99,29 +103,29 @@ public class ProfileTabPanel extends JPanel {
             }
 
             apiClient.getAccountAsync(accountId)
-                .whenComplete((account, ex) -> {
-                    fetchInFlight.set(false);
+                    .whenComplete((account, ex) -> {
+                        fetchInFlight.set(false);
 
-                    SwingUtilities.invokeLater(() -> {
-                        if (ex == null) {
-                            loadedOnce = true;
-                            populateInfo(account);
-                            cardLayout.show(this, CARD_INFO);
-                            return;
-                        }
+                        SwingUtilities.invokeLater(() -> {
+                            if (ex == null) {
+                                loadedOnce = true;
+                                populateInfo(account);
+                                cardLayout.show(this, CARD_INFO);
+                                return;
+                            }
 
-                        if (Utils.isAccountNotFound(ex)) {
-                            loadedOnce = true;
-                            createProfileButton.setEnabled(true);
-                            cardLayout.show(this, CARD_NO_PROFILE);
-                            return;
-                        }
+                            if (Utils.isAccountNotFound(ex)) {
+                                loadedOnce = true;
+                                createProfileButton.setEnabled(true);
+                                cardLayout.show(this, CARD_NO_PROFILE);
+                                return;
+                            }
 
-                        log.warn("Failed to load account info", ex);
-                        Utils.setParagraphText(errorText, Utils.getApiErrorMessage(ex, "Failed to load your account info."));
-                        cardLayout.show(this, CARD_ERROR);
+                            log.warn("Failed to load account info", ex);
+                            Utils.setParagraphText(errorText, Utils.getApiErrorMessage(ex, "Failed to load your account info."));
+                            cardLayout.show(this, CARD_ERROR);
+                        });
                     });
-                });
         });
     }
 

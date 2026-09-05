@@ -58,6 +58,10 @@ public class ProfileCreationService {
     // Prevent overlapping existence checks
     private final AtomicBoolean checkInFlight = new AtomicBoolean(false);
 
+    // Cooldown after a transient failure
+    private static final long FAILED_CHECK_COOLDOWN_MILLIS = TimeUnit.MINUTES.toMillis(5);
+    private volatile long lastFailedCheckAt;
+
     // Delay before the initial sync, so login-time data (clan channels, etc.) has loaded
     private static final int INITIAL_SYNC_DELAY_SECONDS = 60;
 
@@ -112,6 +116,8 @@ public class ProfileCreationService {
             String accountId = AccountHash.getHashed(client);
             if (accountId == null || checkedAccountIds.contains(accountId)) return;
 
+            if (System.currentTimeMillis() - lastFailedCheckAt < FAILED_CHECK_COOLDOWN_MILLIS) return;
+
             if (!checkInFlight.compareAndSet(false, true)) return;
 
             checkProfileExists(accountId, delayInitialSync);
@@ -136,7 +142,9 @@ public class ProfileCreationService {
                         runInitialSync(accountId);
                     }
                 } else {
-                    // Transient error: don't mark as checked, so it is retried on the next login
+                    // Transient error: don't mark as checked, so it is retried
+                    // on the next login (after the cooldown)
+                    lastFailedCheckAt = System.currentTimeMillis();
                     log.warn("Profile existence check failed", ex);
                 }
             } finally {
