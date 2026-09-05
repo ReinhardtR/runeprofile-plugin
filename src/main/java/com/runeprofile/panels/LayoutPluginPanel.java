@@ -72,12 +72,25 @@ public class LayoutPluginPanel extends JPanel {
     }
 
     /**
-     * Called when the panel enters the valid (logged-in) state,
-     * so account data is reloaded on every login and account switch.
+     * Called when a play session starts (login or account switch — not scene
+     * loads). Refreshes account data right away if the side panel is open;
+     * otherwise just marks it stale so nothing is fetched for a panel nobody
+     * is looking at.
      */
-    public void onValidStateEntered() {
-        profileTabPanel.refresh(true);
+    public void onSessionStarted(boolean panelVisible) {
+        if (panelVisible) {
+            profileTabPanel.refresh(true);
+        } else {
+            profileTabPanel.markStale();
+        }
         dropsTabPanel.markStale();
+    }
+
+    /**
+     * Called when the side panel is opened — lazily loads any stale data.
+     */
+    public void onPanelActivated() {
+        profileTabPanel.refresh(false);
     }
 
     /**

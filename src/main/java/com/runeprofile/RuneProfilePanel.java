@@ -31,6 +31,9 @@ public class RuneProfilePanel extends PluginPanel {
     private final InvalidPanel invalidPanel;
     private final LayoutPluginPanel layoutPluginPanel;
 
+    private boolean inSession = false;
+    private volatile boolean panelActive = false;
+
     @Inject
     public RuneProfilePanel(EventBus eventBus, Client client, ClientToolbar clientToolbar, RuneProfileConfig config, HeaderPanel headerPanel, InvalidPanel invalidPanel, LayoutPluginPanel layoutPluginPanel) {
         super(false);
@@ -89,21 +92,38 @@ public class RuneProfilePanel extends PluginPanel {
         updateState(event.getGameState());
     }
 
+    @Override
+    public void onActivate() {
+        panelActive = true;
+        layoutPluginPanel.onPanelActivated();
+    }
+
+    @Override
+    public void onDeactivate() {
+        panelActive = false;
+    }
+
     private void updateState(GameState state) {
         if (state == GameState.LOGGED_IN) {
             RuneScapeProfileType profileType = RuneScapeProfileType.getCurrent(client);
             if (profileType != RuneScapeProfileType.STANDARD) {
+                inSession = false;
                 loadInvalidPlayerState();
             } else {
-                loadValidState();
+                boolean sessionStarted = !inSession;
+                inSession = true;
+                loadValidState(sessionStarted);
             }
-        } else {
+        } else if (state == GameState.LOGIN_SCREEN) {
+            inSession = false;
             loadLoginState();
         }
     }
 
-    private void loadValidState() {
-        layoutPluginPanel.onValidStateEntered();
+    private void loadValidState(boolean sessionStarted) {
+        if (sessionStarted) {
+            layoutPluginPanel.onSessionStarted(panelActive);
+        }
 
         SwingUtilities.invokeLater(() -> {
             if (invalidPanel != null) {
