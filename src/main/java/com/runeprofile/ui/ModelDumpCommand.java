@@ -1,5 +1,6 @@
 package com.runeprofile.ui;
 
+import com.google.gson.Gson;
 import com.runeprofile.modelexporter.GlbExporter;
 import com.runeprofile.utils.DevMode;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,9 @@ public class ModelDumpCommand {
 
     @Inject
     private ClientThread clientThread;
+
+    @Inject
+    private Gson gson;
 
     public void startUp() {
         if (DevMode.ENABLED) {
@@ -173,7 +177,7 @@ public class ModelDumpCommand {
 
     private void write(Model model, String name) {
         try {
-            final byte[] glb = GlbExporter.toBytes(client, model, name);
+            final byte[] glb = GlbExporter.toBytes(gson, client, model, name);
             final File file = writeFile(name + ".glb", glb);
             report(String.format("Wrote %s (%d faces, %d KB) to %s",
                     file.getName(), model.getFaceCount(), glb.length / 1024,

@@ -1,5 +1,6 @@
 package com.runeprofile.modelexporter;
 
+import com.google.gson.Gson;
 import lombok.NonNull;
 import net.runelite.api.Client;
 import net.runelite.api.Model;
@@ -19,12 +20,12 @@ public final class GlbExporter {
      * Writes a self contained GLB with every texture embedded. One file, opens
      * in any glTF viewer, no external requests.
      */
-    public static byte[] toBytes(@NonNull Client client, @NonNull Model model,
+    public static byte[] toBytes(@NonNull Gson gson, @NonNull Client client, @NonNull Model model,
                                  @NonNull String name) throws IOException {
-        return toBytes(client, model, new GlbWriter.Options().embedTextures().modelName(name));
+        return toBytes(gson, client, model, new GlbWriter.Options().embedTextures().modelName(name));
     }
 
-    public static byte[] toBytes(@NonNull Client client, @NonNull Model model,
+    public static byte[] toBytes(@NonNull Gson gson, @NonNull Client client, @NonNull Model model,
                                  @NonNull GlbWriter.Options options) throws IOException {
         final MeshData mesh = ModelMeshBuilder.build(model);
         final GameTextures textures = new GameTextures(client);
@@ -35,6 +36,6 @@ public final class GlbExporter {
         extras.put("vertexCount", mesh.getVertexCount());
         options.extras(extras);
 
-        return GlbWriter.write(mesh, textures::get, options);
+        return GlbWriter.write(gson, mesh, textures::get, options);
     }
 }

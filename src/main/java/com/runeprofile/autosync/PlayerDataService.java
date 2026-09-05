@@ -1,5 +1,6 @@
 package com.runeprofile.autosync;
 
+import com.google.gson.Gson;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.data.*;
 import com.runeprofile.modelexporter.GlbExporter;
@@ -33,6 +34,9 @@ public class PlayerDataService {
 
     @Inject
     private ClientThread clientThread;
+
+    @Inject
+    private Gson gson;
 
     @Inject
     private RuneProfileConfig config;
@@ -201,7 +205,7 @@ public class PlayerDataService {
 
             byte[] modelBytes = null;
             try {
-                modelBytes = GlbExporter.toBytes(client, model, "player");
+                modelBytes = GlbExporter.toBytes(gson, client, model, "player");
             } catch (IOException e) {
                 dataFuture.completeExceptionally(e);
                 return;
@@ -213,7 +217,7 @@ public class PlayerDataService {
             byte[] petModelBytes = null;
             if (petModel != null) {
                 try {
-                    petModelBytes = GlbExporter.toBytes(client, petModel, "pet");
+                    petModelBytes = GlbExporter.toBytes(gson, client, petModel, "pet");
                 } catch (IOException e) {
                     dataFuture.completeExceptionally(e);
                     return;

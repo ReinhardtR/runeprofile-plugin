@@ -94,13 +94,13 @@ public final class GlbWriter {
     private GlbWriter() {
     }
 
-    public static byte[] write(@NonNull MeshData mesh, @NonNull TextureLookup textures,
+    public static byte[] write(@NonNull Gson gson, @NonNull MeshData mesh,
+                               @NonNull TextureLookup textures,
                                @NonNull Options options) throws IOException {
         if (mesh.isEmpty()) {
             throw new IOException("Refusing to write an empty model");
         }
 
-        final Gson gson = new Gson();
         final BinaryChunk bin = new BinaryChunk();
 
         final JsonArray bufferViews = new JsonArray();

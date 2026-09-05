@@ -1,5 +1,6 @@
 package com.runeprofile.modelexporter;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -20,6 +21,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class GlbWriterTest {
+    private static final Gson GSON = new Gson();
+
     private static final int GLB_MAGIC = 0x46546C67;
     private static final int CHUNK_JSON = 0x4E4F534A;
     private static final int CHUNK_BIN = 0x004E4942;
@@ -67,7 +70,7 @@ public class GlbWriterTest {
 
     @Test
     public void writesAValidGlbContainer() throws IOException {
-        final byte[] glb = GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final byte[] glb = GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options().modelName("test"));
 
         final ByteBuffer buffer = ByteBuffer.wrap(glb).order(ByteOrder.LITTLE_ENDIAN);
@@ -89,7 +92,7 @@ public class GlbWriterTest {
 
     @Test
     public void bufferViewsStayInsideTheBufferAndStayAligned() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options()));
 
         final int bufferLength = gltf.getAsJsonArray("buffers").get(0)
@@ -111,7 +114,7 @@ public class GlbWriterTest {
 
     @Test
     public void onlyTexturedPrimitivesDeclareUvs() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options()));
 
         final JsonArray primitives = gltf.getAsJsonArray("meshes").get(0).getAsJsonObject()
@@ -131,7 +134,7 @@ public class GlbWriterTest {
 
     @Test
     public void embedsTexturesByDefault() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options().embedTextures()));
 
         final JsonObject image = gltf.getAsJsonArray("images").get(0).getAsJsonObject();
@@ -142,7 +145,7 @@ public class GlbWriterTest {
 
     @Test
     public void referencesTexturesByUrlWhenAsked() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options().textureUrls("https://cdn.runeprofile.com/texture/%d.png")));
 
         final JsonObject image = gltf.getAsJsonArray("images").get(0).getAsJsonObject();
@@ -152,7 +155,7 @@ public class GlbWriterTest {
 
     @Test
     public void carriesScrollRateForAnimatedTextures() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options()));
 
         final JsonObject material = gltf.getAsJsonArray("materials").get(1).getAsJsonObject();
@@ -164,7 +167,7 @@ public class GlbWriterTest {
 
     @Test
     public void materialsAreUnlitBecauseTheGameDoesNotLightModels() throws IOException {
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(sampleTexture()),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()),
                 new GlbWriter.Options()));
 
         for (int i = 0; i < gltf.getAsJsonArray("materials").size(); i++) {
@@ -181,7 +184,7 @@ public class GlbWriterTest {
         final GameTextures.TextureData broken =
                 new GameTextures.TextureData(5, null, 0xff6600, 0f, 0f);
 
-        final JsonObject gltf = parseJson(GlbWriter.write(sampleMesh(), lookup(broken),
+        final JsonObject gltf = parseJson(GlbWriter.write(GSON, sampleMesh(), lookup(broken),
                 new GlbWriter.Options()));
 
         assertFalse("No image means no textures array", gltf.has("textures"));
@@ -212,7 +215,7 @@ public class GlbWriterTest {
                 sampleMesh().getIndices(), primitives, new float[]{0, 0, 0}, new float[]{10, 10, 0});
 
         final JsonObject gltf = parseJson(
-                GlbWriter.write(mesh, lookup(sampleTexture()), new GlbWriter.Options()));
+                GlbWriter.write(GSON, mesh, lookup(sampleTexture()), new GlbWriter.Options()));
 
         assertEquals("Two materials, one per bias group",
                 2, gltf.getAsJsonArray("materials").size());
@@ -233,7 +236,7 @@ public class GlbWriterTest {
     @Test
     public void writesOneScaledNode() throws IOException {
         final JsonObject gltf = parseJson(
-                GlbWriter.write(sampleMesh(), lookup(sampleTexture()), new GlbWriter.Options()));
+                GlbWriter.write(GSON, sampleMesh(), lookup(sampleTexture()), new GlbWriter.Options()));
 
         final JsonArray nodes = gltf.getAsJsonArray("nodes");
         assertEquals(1, nodes.size());
@@ -248,7 +251,7 @@ public class GlbWriterTest {
     public void refusesToWriteAnEmptyModel() throws IOException {
         final MeshData empty = new MeshData(new float[0], new byte[0], null, null, new int[0],
                 new ArrayList<>(), new float[]{0, 0, 0}, new float[]{0, 0, 0});
-        GlbWriter.write(empty, id -> null, new GlbWriter.Options());
+        GlbWriter.write(GSON, empty, id -> null, new GlbWriter.Options());
     }
 
 
