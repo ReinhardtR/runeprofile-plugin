@@ -97,8 +97,6 @@ public class PlayerDataService {
             playerData.setAccountType(client.getVarbitValue(VarbitID.IRONMAN));
             playerData.setClan(getPlayerClanData(player));
             playerData.setGroupName(getPlayerGroupName());
-            // The game exempts Group Ironmen from combat achievements that need
-            // a bigger team than their group, so the server needs the size.
             playerData.setGimGroupSize(client.getVarbitValue(VarbitID.GIM_GROUPSIZE));
 
             collectSkills(playerData);
