@@ -20,6 +20,9 @@ public class PlayerData {
     @Nullable
     private String groupName;
 
+    // gim_groupsize varbit, 0 outside Group Ironman
+    private Integer gimGroupSize;
+
     // skill name -> xp
     private Map<String, Integer> skills = new HashMap<>();
 
