@@ -236,7 +236,11 @@ public class DropsTabPanel extends JPanel {
         nameLabel.setForeground(Color.WHITE);
         textPanel.add(nameLabel);
 
-        String value = QuantityFormatter.quantityToRSDecimalStack(record.getData().getValue(), true) + " gp";
+        long gp = record.getData().getValue();
+        // The precise formatter only takes an int, which item values can now exceed
+        String value = (gp <= Integer.MAX_VALUE
+                ? QuantityFormatter.quantityToRSDecimalStack((int) gp, true)
+                : QuantityFormatter.quantityToStackSize(gp)) + " gp";
         JLabel detailsLabel = new JLabel(value + " · " + Utils.formatTimestamp(record.getCreatedAt()));
         detailsLabel.setFont(FontManager.getRunescapeSmallFont());
         detailsLabel.setForeground(Color.GRAY);

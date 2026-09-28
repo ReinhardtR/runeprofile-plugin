@@ -26,7 +26,7 @@ public class ItemUtils {
      * in {@code valueOverrides} (the special valuable drops served by the manifest)
      * use their fixed value; everything else uses the live GE price.
      */
-    public static int getPerceivedItemValue(@NonNull ItemManager itemManager, int itemId, @Nullable Map<Integer, Integer> valueOverrides) {
+    public static long getPerceivedItemValue(@NonNull ItemManager itemManager, int itemId, @Nullable Map<Integer, Integer> valueOverrides) {
         if (valueOverrides != null) {
             Integer override = valueOverrides.get(itemId);
             if (override != null) {
