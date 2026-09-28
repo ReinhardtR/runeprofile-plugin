@@ -82,7 +82,7 @@ public class ValuableDropSubscriber {
         for (ItemStack itemStack : items) {
             ItemComposition item = itemManager.getItemComposition(itemStack.getId());
             int itemId = ItemUtils.getUnnotedItemId(item);
-            int value = ItemUtils.getPerceivedItemValue(itemManager, itemId, valueOverrides);
+            long value = ItemUtils.getPerceivedItemValue(itemManager, itemId, valueOverrides);
 
             if (value >= threshold) {
                 for (int i = 0; i < itemStack.getQuantity(); i++) {

@@ -14,6 +14,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -110,6 +113,32 @@ public class Utils {
         } catch (DateTimeParseException e) {
             return raw;
         }
+    }
+
+    private final String[] QUANTITY_SUFFIXES = {"K", "M", "B", "T"};
+
+    /**
+     * Formats a quantity to three significant digits with a K/M/B/T suffix, e.g.
+     * 1.23M or 15.6B. Rounds down so a value is never shown as more than it is.
+     */
+    public String formatQuantity(long quantity) {
+        int suffix = -1;
+        long divisor = 1;
+        while (suffix < QUANTITY_SUFFIXES.length - 1 && quantity / divisor >= 1000) {
+            divisor *= 1000;
+            suffix++;
+        }
+
+        if (suffix < 0) {
+            return Long.toString(quantity);
+        }
+
+        String digits = BigDecimal.valueOf(quantity)
+                .divide(BigDecimal.valueOf(divisor))
+                .round(new MathContext(3, RoundingMode.DOWN))
+                .stripTrailingZeros()
+                .toPlainString();
+        return digits + QUANTITY_SUFFIXES[suffix];
     }
 
     /**

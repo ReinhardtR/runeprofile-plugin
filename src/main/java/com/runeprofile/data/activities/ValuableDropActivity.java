@@ -11,6 +11,6 @@ public class ValuableDropActivity extends Activity<ValuableDropActivity.Data> {
     @lombok.Data
     public static class Data implements ActivityData {
         private final int itemId;
-        private final int value;
+        private final long value;
     }
 }
