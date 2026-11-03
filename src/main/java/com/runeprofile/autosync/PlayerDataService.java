@@ -98,6 +98,7 @@ public class PlayerDataService {
             playerData.setClan(getPlayerClanData(player));
             playerData.setGroupName(getPlayerGroupName());
             playerData.setGimGroupSize(client.getVarbitValue(VarbitID.GIM_GROUPSIZE));
+            playerData.setHardcoreMain(client.getVarbitValue(VarbitID.HC_MAIN));
 
             collectSkills(playerData);
             collectQuests(playerData, manifest);

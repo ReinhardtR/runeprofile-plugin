@@ -23,6 +23,9 @@ public class PlayerData {
     // gim_groupsize varbit, 0 outside Group Ironman
     private Integer gimGroupSize;
 
+    // HC_MAIN varbit, 1 for a Hardcore Worlds character
+    private Integer hardcoreMain;
+
     // skill name -> xp
     private Map<String, Integer> skills = new HashMap<>();
 
