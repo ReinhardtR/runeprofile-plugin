@@ -164,4 +164,22 @@ public interface RuneProfileConfig extends Config {
         return SyncButtonMode.REPLACE_SEARCH;
     }
 
+    @ConfigSection(
+            name = "External Plugin Requests",
+            description = "Settings for other plugins that ask RuneProfile for your data",
+            position = 5,
+            closedByDefault = true
+    )
+    String externalSection = "externalSection";
+
+    @ConfigItem(
+            keyName = "external_collection_log_requests",
+            name = "Share collection log with plugins",
+            description = "Lets other plugins read your collection log from your RuneProfile.",
+            position = 1,
+            section = externalSection
+    )
+    default boolean allowExternalCollectionLogRequests() {
+        return false;
+    }
 }
