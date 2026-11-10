@@ -8,6 +8,8 @@ import com.runeprofile.data.UpdateProfileResult;
 import com.runeprofile.data.activities.Activity;
 import com.runeprofile.data.activities.ActivityData;
 import com.runeprofile.events.ProfileCreated;
+import com.runeprofile.events.ProfileUpdated;
+import com.runeprofile.pluginmessage.CollectionLogPluginMessage;
 import com.runeprofile.events.ProfileDeleted;
 import com.runeprofile.ui.*;
 import com.runeprofile.utils.PlayerState;
@@ -109,6 +111,9 @@ public class RuneProfilePlugin extends Plugin {
     @Inject
     private ModelDumpCommand modelDumpCommand;
 
+    @Inject
+    private CollectionLogPluginMessage collectionLogPluginMessage;
+
     private RuneProfilePanel runeProfilePanel;
 
     @Provides
@@ -144,6 +149,7 @@ public class RuneProfilePlugin extends Plugin {
         collectionLogCommand.startUp();
         commandSuggestionOverlay.startUp();
         modelDumpCommand.startUp();
+        collectionLogPluginMessage.startUp();
     }
 
     @Override
@@ -171,6 +177,7 @@ public class RuneProfilePlugin extends Plugin {
         collectionLogCommand.shutDown();
         commandSuggestionOverlay.shutDown();
         modelDumpCommand.shutDown();
+        collectionLogPluginMessage.shutDown();
     }
 
     public CompletableFuture<UpdateProfileResult> updateProfileAsync(boolean isAutoSync, String eventSource) {
@@ -224,6 +231,7 @@ public class RuneProfilePlugin extends Plugin {
                     }
 
                     playerDataService.reset();
+                    eventBus.post(new ProfileUpdated());
                 });
     }
 
