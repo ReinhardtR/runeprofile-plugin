@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class CollectionLogRequest {
     /**
-     * The human-facing name of the plugin making the request. Required.
+     * The name of the plugin making the request. Optional, only used in debug logs.
      */
     private String sourcePlugin;
 

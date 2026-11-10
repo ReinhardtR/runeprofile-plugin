@@ -2,8 +2,6 @@
 
 Other Plugin Hub plugins can read the local player's collection log from RuneProfile by posting a `PluginMessage` with `EventBus#post`.
 
-Users must opt into this via `External Plugin Requests > Share collection log with plugins` in the RuneProfile settings. It is off by default.
-
 The data comes from the player's RuneProfile (the same source as the `!log` command), so the player needs a profile, and a page reflects their last sync rather than live game state. RuneProfile syncs automatically, including shortly after a new collection log item.
 
 ## Request
@@ -12,7 +10,7 @@ The `namespace` should be `runeprofile` and the `name` should be `collection-log
 
 | Field          | Required | Type   | Description                                                                         |
 | -------------- | -------- | ------ | ----------------------------------------------------------------------------------- |
-| `sourcePlugin` | Y        | String | The human-facing name of the plugin making the request.                             |
+| `sourcePlugin` | N        | String | Your plugin's name. Only used in RuneProfile's debug logs.                          |
 | `page`         | Y        | String | A collection log page name or alias, the same as `!log` accepts (e.g. `Vorkath`).   |
 | `requestId`    | N        | Object | Any value. It is returned unchanged in the response so you can match the two up.    |
 
@@ -34,8 +32,7 @@ RuneProfile answers every request with a `PluginMessage` with namespace `runepro
 
 | `reason`            | Meaning                                                                    |
 | ------------------- | -------------------------------------------------------------------------- |
-| `DISABLED`          | The user has not enabled `Share collection log with plugins`.              |
-| `INVALID_REQUEST`   | `sourcePlugin` or `page` is missing.                                       |
+| `INVALID_REQUEST`   | `page` is missing or the request could not be read.                        |
 | `NOT_LOGGED_IN`     | The player is not logged in.                                               |
 | `PROFILE_NOT_FOUND` | The player has no RuneProfile yet.                                         |
 | `PAGE_NOT_FOUND`    | No collection log page matches `page`.                                     |
@@ -78,8 +75,8 @@ public void onPluginMessage(PluginMessage message) {
 
     if (Boolean.TRUE.equals(data.get("success"))) {
         String text = data.get("name") + " " + data.get("obtained") + "/" + data.get("total");
-    } else if ("DISABLED".equals(data.get("reason"))) {
-        // ask the user to enable sharing in the RuneProfile settings
+    } else if ("PROFILE_NOT_FOUND".equals(data.get("reason"))) {
+        // ask the user to create a RuneProfile
     } else {
         String text = (String) data.get("error");
     }

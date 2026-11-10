@@ -2,7 +2,6 @@ package com.runeprofile.pluginmessage;
 
 import com.google.gson.Gson;
 import com.runeprofile.RuneProfileApiClient;
-import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.data.CollectionLogItem;
 import com.runeprofile.data.CollectionLogPage;
@@ -29,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Lets other plugins read the local player's collection log through RuneLite's PluginMessage bus.
- * The user must opt in with the "Share collection log with plugins" setting.
  * <p>
  * The message contract is documented in docs/external-plugin-messaging.md.
  */
@@ -41,7 +39,6 @@ public class CollectionLogPluginMessage {
     public static final String RESPONSE_NAME = "collection-log";
     public static final String CHANGED_NAME = "collection-log-changed";
 
-    public static final String REASON_DISABLED = "DISABLED";
     public static final String REASON_INVALID_REQUEST = "INVALID_REQUEST";
     public static final String REASON_NOT_LOGGED_IN = "NOT_LOGGED_IN";
     public static final String REASON_PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND";
@@ -68,9 +65,6 @@ public class CollectionLogPluginMessage {
 
     @Inject
     private Gson gson;
-
-    @Inject
-    private RuneProfileConfig config;
 
     @Inject
     private RuneProfileApiClient runeProfileApiClient;
@@ -103,7 +97,6 @@ public class CollectionLogPluginMessage {
     @Subscribe
     public void onProfileUpdated(ProfileUpdated event) {
         cache.clear();
-        if (!config.allowExternalCollectionLogRequests()) return;
 
         // Tell listeners to request their pages again instead of polling.
         clientThread.invokeLater(() -> eventBus.post(new PluginMessage(NAMESPACE, CHANGED_NAME, Collections.emptyMap())));
@@ -135,19 +128,6 @@ public class CollectionLogPluginMessage {
 
         String sourcePlugin = request.getSourcePlugin();
         String page = request.getPage() == null ? "" : request.getPage().trim();
-
-        if (sourcePlugin == null || sourcePlugin.trim().isEmpty()) {
-            log.info("Rejecting collection log request without 'sourcePlugin': {}", data);
-            respondError(page, requestId, REASON_INVALID_REQUEST, "Missing \"sourcePlugin\".");
-            return;
-        }
-
-        if (!config.allowExternalCollectionLogRequests()) {
-            log.debug("Rejecting collection log request from {}: sharing is disabled", sourcePlugin);
-            respondError(page, requestId, REASON_DISABLED,
-                    "Enable \"Share collection log with plugins\" in the RuneProfile plugin settings.");
-            return;
-        }
 
         if (page.isEmpty()) {
             log.info("Rejecting collection log request from {} without 'page'", sourcePlugin);

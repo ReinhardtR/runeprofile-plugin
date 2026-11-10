@@ -60,6 +60,4 @@ You can read more about how to use RuneProfile here: [runeprofile.com/info/guide
 
 Other Plugin Hub plugins can read your collection log from RuneProfile through RuneLite's `PluginMessage` event.
 
-You can enable this via `External Plugin Requests > Share collection log with plugins`.
-
 Plugin developers: see [docs/external-plugin-messaging.md](docs/external-plugin-messaging.md) for the message format.
