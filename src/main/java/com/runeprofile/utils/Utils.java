@@ -71,7 +71,15 @@ public class Utils {
     }
 
     public void openProfileInBrowser(String username) {
-        String url = "https://www.runeprofile.com/" + username.replace(" ", "%20");
+        // Game names use a non-breaking space where the player typed a space. Hyphens and
+        // underscores are part of the stored name, so they must reach the URL unchanged.
+        String name = username.replace('\u00A0', ' ').trim();
+        String url = new HttpUrl.Builder()
+                .scheme("https")
+                .host("www.runeprofile.com")
+                .addPathSegment(name)
+                .build()
+                .toString();
         LinkBrowser.browse(url);
     }
 

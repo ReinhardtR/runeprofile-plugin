@@ -11,7 +11,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 
@@ -62,7 +61,9 @@ public class ChatPlayerMenuOption {
                 || groupId == InterfaceID.IGNORE);
 
         if (addMenuLookup) {
-            String username = Text.toJagexName(Text.removeTags(event.getTarget()));
+            // Not Text.toJagexName: it turns hyphens and underscores into spaces, so
+            // "RNG-ezus" would open the profile of "RNG ezus".
+            String username = Utils.sanitize(event.getTarget());
 
             client.getMenu().createMenuEntry(-2)
                     .setTarget(event.getTarget())
