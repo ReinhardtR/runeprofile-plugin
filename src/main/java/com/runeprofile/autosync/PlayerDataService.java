@@ -44,6 +44,9 @@ public class PlayerDataService {
     @Inject
     private ManifestService manifestService;
 
+    @Inject
+    private BossRecordsService bossRecordsService;
+
     // Clog items are not available through the client API, so we store them manually on clog open or item collection.
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
     private final Map<Integer, Integer> clogItems = new HashMap<>();
@@ -104,6 +107,10 @@ public class PlayerDataService {
             collectQuests(playerData, manifest);
             collectCombatAchievementVarps(playerData, manifest);
             collectAchievementDiaryTiers(playerData);
+
+            BossRecords bossRecords = bossRecordsService.collect();
+            playerData.setKillCounts(bossRecords.getKillCounts());
+            playerData.setPersonalBests(bossRecords.getPersonalBests());
 
             // Unlike the rest, clog items are accumulated as the player sees them
             // rather than read from the client here.

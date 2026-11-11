@@ -3,8 +3,12 @@ package com.runeprofile.ui;
 import com.runeprofile.RuneProfileApiClient;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
+import com.runeprofile.autosync.BossRecordsService;
+import com.runeprofile.data.BossRecords;
+import com.runeprofile.data.CollectionLogCounter;
 import com.runeprofile.data.CollectionLogItem;
 import com.runeprofile.data.CollectionLogPage;
+import com.runeprofile.utils.AccountHash;
 import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -13,6 +17,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatCommandManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ChatInput;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.ImageUtil;
@@ -24,6 +29,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -51,6 +58,15 @@ public class CollectionLogCommand {
     @Inject
     private RuneProfileApiClient runeProfileApiClient;
 
+    @Inject
+    private BossRecordsService bossRecordsService;
+
+    // How long an outgoing "!log" may be held back while the sender's kill counts upload.
+    private static final long SUBMIT_TIMEOUT_SECONDS = 3;
+
+    // What the last "!log" uploaded, so repeated commands don't re-send unchanged values.
+    private volatile BossRecords lastSubmittedRecords;
+
     private final Map<Integer, Integer> loadedItemIcons = new HashMap<>();
     private final String COLLECTION_LOG_COMMAND = "!log";
     private final Pattern COLLECTION_LOG_COMMAND_PATTERN = Pattern.compile("^(" + COLLECTION_LOG_COMMAND + ")\\s+([a-zA-Z]+(?: [a-zA-Z]+)*)$", Pattern.CASE_INSENSITIVE);
@@ -59,7 +75,7 @@ public class CollectionLogCommand {
         eventBus.register(this);
 
         if (config.enableLogCommand()) {
-            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
+            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand, this::submitBossRecords);
         }
     }
 
@@ -74,10 +90,43 @@ public class CollectionLogCommand {
         if (!event.getGroup().equals(RuneProfilePlugin.CONFIG_GROUP)) return;
 
         if (config.enableLogCommand()) {
-            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand);
+            chatCommandManager.registerCommand(COLLECTION_LOG_COMMAND, this::executeLogCommand, this::submitBossRecords);
         } else {
             chatCommandManager.unregisterCommand(COLLECTION_LOG_COMMAND);
         }
+    }
+
+    /**
+     * Runs when the local player sends a "!log" message, before it goes out. Uploads their current
+     * kill counts and personal bests so everyone who looks the page up sees fresh values, then lets
+     * the message through. Returning false sends the message right away.
+     */
+    private boolean submitBossRecords(ChatInput chatInput, String message) {
+        if (!COLLECTION_LOG_COMMAND_PATTERN.matcher(message).matches()) {
+            return false;
+        }
+
+        String accountHash = AccountHash.getHashed(client);
+        if (accountHash == null) {
+            return false;
+        }
+
+        BossRecords records = bossRecordsService.collect();
+        if (records.isEmpty() || Objects.equals(records, lastSubmittedRecords)) {
+            return false;
+        }
+
+        runeProfileApiClient.updateBossRecordsAsync(accountHash, records)
+                .orTimeout(SUBMIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.debug("Failed to submit boss records for !log", ex);
+                    } else {
+                        lastSubmittedRecords = records;
+                    }
+                    chatInput.resume();
+                });
+        return true;
     }
 
     private void executeLogCommand(ChatMessage chatMessage, String message) {
@@ -146,20 +195,42 @@ public class CollectionLogCommand {
                 int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
                 int totalItemsCount = items.size();
 
+                final String counters = formatCounters(page.getChatCounters());
+
                 final String replacementMessage;
                 if (showMissing) {
                     int missingItemsCount = totalItemsCount - obtainedItemsCount;
                     if (missingItemsCount == 0) {
-                        replacementMessage = page.getName() + " - completed (" + totalItemsCount + "/" + totalItemsCount + ")";
+                        replacementMessage = page.getName() + " - completed (" + totalItemsCount + "/" + totalItemsCount + ")" + counters;
                     } else {
-                        replacementMessage = page.getName() + " - missing (" + missingItemsCount + "/" + totalItemsCount + ") : " + itemBuilder;
+                        replacementMessage = page.getName() + " - missing (" + missingItemsCount + "/" + totalItemsCount + ")" + counters + " : " + itemBuilder;
                     }
                 } else {
-                    replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + " : " + itemBuilder;
+                    replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + counters + " : " + itemBuilder;
                 }
                 updateChatMessage(chatMessage, replacementMessage);
             });
         });
+    }
+
+    /**
+     * The known kill counts among the given lines, in their order, e.g. " | KC: 312 | HMT KC: 45".
+     * Personal bests are left out of the chat reply. Empty when none are known.
+     */
+    static String formatCounters(List<CollectionLogCounter> counters) {
+        if (counters == null) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (CollectionLogCounter counter : counters) {
+            Double value = counter.getValue();
+            if (value == null || counter.isPersonalBest()) continue;
+
+            builder.append(" | ").append(counter.getDisplayLabel()).append(": ")
+                    .append(String.format("%,d", value.longValue()));
+        }
+        return builder.toString();
     }
 
     private void loadPageIcons(CollectionLogPage page) {
