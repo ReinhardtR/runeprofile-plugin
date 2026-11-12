@@ -3,6 +3,7 @@ package com.runeprofile.autosync;
 import com.google.gson.Gson;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.data.*;
+import com.runeprofile.events.ProfileDeleted;
 import com.runeprofile.modelexporter.GlbExporter;
 import com.runeprofile.utils.AccountHash;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Singleton
@@ -51,6 +53,10 @@ public class PlayerDataService {
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
     private final Map<Integer, Integer> clogItems = new HashMap<>();
 
+    // The items this session's profile updates have sent, so a collection log open can tell whether
+    // it found anything new. Empty until the first sync, so the first open of a session always syncs.
+    private final Map<Integer, Integer> syncedItems = new ConcurrentHashMap<>();
+
     public void startUp() {
         eventBus.register(this);
     }
@@ -67,6 +73,13 @@ public class PlayerDataService {
     public void onRuneScapeProfileChanged(RuneScapeProfileChanged event) {
         log.debug("RuneScape Profile changed to {}, resetting player data service", event.getNewProfile());
         reset();
+        syncedItems.clear();
+    }
+
+    @Subscribe
+    public void onProfileDeleted(ProfileDeleted event) {
+        // The server no longer has any of them.
+        syncedItems.clear();
     }
 
     public void storeItem(int itemId, int quantity) {
@@ -74,9 +87,19 @@ public class PlayerDataService {
         clogItems.put(itemId, quantity);
     }
 
-    /** Whether collection log items have been seen since the last profile update. */
-    public boolean hasItems() {
-        return !clogItems.isEmpty();
+    /** Whether any stored item is new, or has a different quantity, since the last sync. */
+    public boolean hasUnsyncedItems() {
+        for (Map.Entry<Integer, Integer> item : clogItems.entrySet()) {
+            if (!item.getValue().equals(syncedItems.get(item.getKey()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Records the items a successful profile update sent. */
+    public void markItemsSynced(Map<Integer, Integer> items) {
+        syncedItems.putAll(items);
     }
 
     public void clearItems() {
@@ -119,7 +142,8 @@ public class PlayerDataService {
 
             // Unlike the rest, clog items are accumulated as the player sees them
             // rather than read from the client here.
-            playerData.setItems(clogItems);
+            // A copy, so what's marked as synced afterwards is exactly what was sent.
+            playerData.setItems(new HashMap<>(clogItems));
 
             log.debug("Player Data: {}", playerData);
             playerDataFuture.complete(playerData);
