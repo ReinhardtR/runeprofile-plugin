@@ -9,6 +9,7 @@ import com.runeprofile.data.CollectionLogCounter;
 import com.runeprofile.data.CollectionLogItem;
 import com.runeprofile.data.CollectionLogPage;
 import com.runeprofile.utils.AccountHash;
+import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -117,6 +118,12 @@ public class CollectionLogCommand {
      */
     private boolean submitBossRecords(ChatInput chatInput, String message) {
         if (!COLLECTION_LOG_COMMAND_PATTERN.matcher(message).matches()) {
+            return false;
+        }
+
+        // Seasonal and other non-standard worlds keep their own Chat Commands values, which must not
+        // land on the main account's profile.
+        if (!PlayerState.isValidPlayerState(client)) {
             return false;
         }
 

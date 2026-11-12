@@ -51,7 +51,8 @@ public class PlayerDataService {
 
     // Clog items are not available through the client API, so we store them manually on clog open or item collection.
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
-    private final Map<Integer, Integer> clogItems = new HashMap<>();
+    // Concurrent: stored on the client thread, cleared after a sync on an HTTP thread.
+    private final Map<Integer, Integer> clogItems = new ConcurrentHashMap<>();
 
     // The items this session's profile updates have sent, so a collection log open can tell whether
     // it found anything new. Empty until the first sync, so the first open of a session always syncs.
