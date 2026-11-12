@@ -74,6 +74,11 @@ public class PlayerDataService {
         clogItems.put(itemId, quantity);
     }
 
+    /** Whether collection log items have been seen since the last profile update. */
+    public boolean hasItems() {
+        return !clogItems.isEmpty();
+    }
+
     public void clearItems() {
         clogItems.clear();
     }

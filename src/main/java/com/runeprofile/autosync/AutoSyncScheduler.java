@@ -11,6 +11,7 @@ import net.runelite.client.events.ConfigChanged;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -161,6 +162,15 @@ public class AutoSyncScheduler {
      * Performs the actual sync, ensuring only one sync runs at a time.
      */
     private void performSync(String eventSource) {
+        // Another update (e.g. from a "!log") is underway: sync once it's done, so both don't report
+        // the same new items and log them twice. It clears what it sent, so this one only sends the rest.
+        CompletableFuture<?> inFlight = plugin.getProfileUpdateInFlight();
+        if (inFlight != null) {
+            log.debug("Profile update in progress, syncing after it");
+            inFlight.whenComplete((result, ex) -> performSync(eventSource));
+            return;
+        }
+
         if (!isSyncing.compareAndSet(false, true)) {
             log.debug("Sync already in progress, skipping...");
             return;

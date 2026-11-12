@@ -180,6 +180,15 @@ public class RuneProfilePlugin extends Plugin {
         collectionLogPluginMessage.shutDown();
     }
 
+    // The profile update currently on its way to the API, so callers can wait on it rather than send another.
+    private volatile CompletableFuture<UpdateProfileResult> profileUpdateInFlight;
+
+    /** The profile update currently in progress, or null when none is. */
+    public CompletableFuture<UpdateProfileResult> getProfileUpdateInFlight() {
+        CompletableFuture<UpdateProfileResult> update = profileUpdateInFlight;
+        return update != null && !update.isDone() ? update : null;
+    }
+
     public CompletableFuture<UpdateProfileResult> updateProfileAsync(boolean isAutoSync, String eventSource) {
         if (!PlayerState.isValidPlayerState(client)) {
             if (!isAutoSync) {
@@ -196,7 +205,7 @@ public class RuneProfilePlugin extends Plugin {
             autoSyncScheduler.resetAutoSyncTimer();
         }
 
-        return playerDataService.getPlayerDataAsync().thenCompose((data) -> {
+        CompletableFuture<UpdateProfileResult> update = playerDataService.getPlayerDataAsync().thenCompose((data) -> {
                     // sanity check: a player reported syncs going through on invalid worlds
                     if (!PlayerState.isValidPlayerState(client)) {
                         throw new IllegalStateException("Invalid player state after fetching player data");
@@ -233,6 +242,8 @@ public class RuneProfilePlugin extends Plugin {
                     playerDataService.reset();
                     eventBus.post(new ProfileUpdated());
                 });
+        profileUpdateInFlight = update;
+        return update;
     }
 
     /**

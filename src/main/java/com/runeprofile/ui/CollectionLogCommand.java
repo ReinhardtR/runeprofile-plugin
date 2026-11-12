@@ -4,11 +4,13 @@ import com.runeprofile.RuneProfileApiClient;
 import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
 import com.runeprofile.autosync.BossRecordsService;
+import com.runeprofile.autosync.PlayerDataService;
 import com.runeprofile.data.BossRecords;
 import com.runeprofile.data.CollectionLogCounter;
 import com.runeprofile.data.CollectionLogItem;
 import com.runeprofile.data.CollectionLogPage;
 import com.runeprofile.utils.AccountHash;
+import com.runeprofile.utils.PlayerState;
 import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -30,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,13 +64,27 @@ public class CollectionLogCommand {
     @Inject
     private BossRecordsService bossRecordsService;
 
+    @Inject
+    private PlayerDataService playerDataService;
+
+    @Inject
+    private RuneProfilePlugin plugin;
+
     private static final String SEPARATOR = " | ";
 
     // How long an outgoing "!log" may be held back while the sender's kill counts upload.
     private static final long SUBMIT_TIMEOUT_SECONDS = 3;
 
+    // After a failed upload, "!log" messages go out without uploading for this long.
+    private static final long RETRY_AFTER_FAILURE_MILLIS = TimeUnit.MINUTES.toMillis(1);
+
     // What the last "!log" uploaded, so repeated commands don't re-send unchanged values.
     private volatile BossRecords lastSubmittedRecords;
+
+    // The upload the last "!log" started, while it may still be running.
+    private volatile CompletableFuture<?> submitInFlight;
+
+    private volatile long lastFailedSubmitMillis;
 
     private final Map<Integer, Integer> loadedItemIcons = new HashMap<>();
     private final String COLLECTION_LOG_COMMAND = "!log";
@@ -99,9 +116,14 @@ public class CollectionLogCommand {
     }
 
     /**
-     * Runs when the local player sends a "!log" message, before it goes out. Uploads their current
-     * kill counts and personal bests so everyone who looks the page up sees fresh values, then lets
-     * the message through. Returning false sends the message right away.
+     * Runs when the local player sends a "!log" message, before it goes out. Uploads what changed since
+     * the last upload so everyone who looks the page up sees fresh values, then lets the message through:
+     * a full profile update when collection log items are waiting to be synced (it carries the kill
+     * counts too), otherwise just the kill counts and personal bests. Returning false sends the message
+     * right away.
+     *
+     * Repeated commands don't pile up requests: one already on its way is waited on rather than
+     * duplicated, unchanged values aren't re-sent, and a failed upload isn't retried for a while.
      */
     private boolean submitBossRecords(ChatInput chatInput, String message) {
         if (!COLLECTION_LOG_COMMAND_PATTERN.matcher(message).matches()) {
@@ -113,22 +135,56 @@ public class CollectionLogCommand {
             return false;
         }
 
-        BossRecords records = bossRecordsService.collect();
-        if (records.isEmpty() || Objects.equals(records, lastSubmittedRecords)) {
+        // A profile update (from autosync or an earlier "!log") or kill count upload is already
+        // underway: wait for it instead of sending another.
+        CompletableFuture<?> inFlight = plugin.getProfileUpdateInFlight();
+        if (inFlight == null && submitInFlight != null && !submitInFlight.isDone()) {
+            inFlight = submitInFlight;
+        }
+        if (inFlight != null) {
+            holdUntil(chatInput, inFlight);
+            return true;
+        }
+
+        if (System.currentTimeMillis() - lastFailedSubmitMillis < RETRY_AFTER_FAILURE_MILLIS) {
             return false;
         }
 
-        runeProfileApiClient.updateBossRecordsAsync(accountHash, records)
-                .orTimeout(SUBMIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.debug("Failed to submit boss records for !log", ex);
-                    } else {
-                        lastSubmittedRecords = records;
-                    }
-                    chatInput.resume();
-                });
+        BossRecords records = bossRecordsService.collect();
+
+        final CompletableFuture<?> submit;
+        // Only for players who let the plugin sync on its own.
+        if (config.autosyncProfile() && playerDataService.hasItems() && PlayerState.isValidPlayerState(client)) {
+            try {
+                submit = plugin.updateProfileAsync(true, "log-command");
+            } catch (IllegalStateException e) {
+                return false;
+            }
+        } else if (records.isEmpty() || Objects.equals(records, lastSubmittedRecords)) {
+            return false;
+        } else {
+            submit = runeProfileApiClient.updateBossRecordsAsync(accountHash, records);
+        }
+
+        submitInFlight = submit;
+        submit.whenComplete((result, ex) -> {
+            if (ex != null) {
+                log.debug("Failed to upload for !log", ex);
+                lastFailedSubmitMillis = System.currentTimeMillis();
+            } else {
+                lastSubmittedRecords = records;
+            }
+        });
+        holdUntil(chatInput, submit);
         return true;
+    }
+
+    /** Lets the held message go out once the upload finishes, or after the timeout. */
+    private void holdUntil(ChatInput chatInput, CompletableFuture<?> upload) {
+        // A copy, so the timeout doesn't fail the upload itself for anyone else waiting on it.
+        upload.copy()
+                .orTimeout(SUBMIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .whenComplete((result, ex) -> chatInput.resume());
     }
 
     private void executeLogCommand(ChatMessage chatMessage, String message) {
