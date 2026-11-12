@@ -5,7 +5,6 @@ import com.runeprofile.data.CollectionLogCounter;
 import com.runeprofile.data.CollectionLogPage;
 import org.junit.Test;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -23,14 +22,14 @@ public class CollectionLogCommandTest {
                     new CollectionLogCounter("Gauntlet completion count", "KC", "kc", null),
                     new CollectionLogCounter("Personal Best Corrupted", "CG PB", "pb", 372.6),
                     new CollectionLogCounter("Personal Best", "PB", "pb", 1234.0)
-            ), ChatSeparator.PLAIN);
+            ));
             assertEquals(" | CG KC: 45", formatted);
 
             assertEquals(" | KC: 12,345", CollectionLogCommand.formatCounters(Arrays.asList(
-                    new CollectionLogCounter("Zulrah kills", "KC", "kc", 12345.0)), ChatSeparator.PLAIN));
+                    new CollectionLogCounter("Zulrah kills", "KC", "kc", 12345.0))));
             // Older APIs send no short label
             assertEquals(" | Zulrah kills: 12,345", CollectionLogCommand.formatCounters(Arrays.asList(
-                    new CollectionLogCounter("Zulrah kills", null, "kc", 12345.0)), ChatSeparator.PLAIN));
+                    new CollectionLogCounter("Zulrah kills", null, "kc", 12345.0))));
         } finally {
             Locale.setDefault(previous);
         }
@@ -41,7 +40,7 @@ public class CollectionLogCommandTest {
         CollectionLogPage page = new Gson().fromJson(
                 "{\"name\":\"Zulrah\",\"items\":[{\"id\":1,\"quantity\":0}]}", CollectionLogPage.class);
         assertNull(page.getCounters());
-        assertEquals("", CollectionLogCommand.formatCounters(page.getCounters(), ChatSeparator.PLAIN));
+        assertEquals("", CollectionLogCommand.formatCounters(page.getCounters()));
     }
 
     @Test
@@ -69,26 +68,9 @@ public class CollectionLogCommandTest {
                     + "{\"label\":\"Theatre of Blood completions\",\"shortLabel\":\"KC\",\"type\":\"kc\",\"value\":312},"
                     + "{\"label\":\"Theatre of Blood (Hard) completions\",\"shortLabel\":\"HMT KC\",\"type\":\"kc\",\"value\":45}]}",
                     CollectionLogPage.class);
-            assertEquals(" | KC: 312 | HMT KC: 45", CollectionLogCommand.formatCounters(page.getChatCounters(), ChatSeparator.PLAIN));
+            assertEquals(" | KC: 312 | HMT KC: 45", CollectionLogCommand.formatCounters(page.getChatCounters()));
         } finally {
             Locale.setDefault(previous);
         }
-    }
-
-    @Test
-    public void dimsTheSeparatorTowardsTheChatboxBackground() {
-        // Opaque public chat's default blue, halfway into the parchment
-        assertEquals(new Color(0x64, 0x5C, 0xC9), ChatSeparator.dim(new Color(0x0000FF), false));
-        // Transparent: halfway to black
-        assertEquals(new Color(0x48, 0x48, 0x7F), ChatSeparator.dim(new Color(0x9090FF), true));
-    }
-
-    @Test
-    public void colouredSeparatorSwitchesBackToTheMessageColour() {
-        assertEquals(" <col=645cc9>|<colNORMAL> ", ChatSeparator.of(new Color(0x645CC9)));
-        assertEquals(" | ", ChatSeparator.of(null));
-        assertEquals(" <col=645cc9>|<colNORMAL> KC: 312", CollectionLogCommand.formatCounters(Arrays.asList(
-                new CollectionLogCounter("Theatre of Blood completions", "KC", "kc", 312.0)),
-                ChatSeparator.of(new Color(0x645CC9))));
     }
 }

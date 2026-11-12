@@ -13,23 +13,17 @@ import com.runeprofile.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatCommandManager;
-import net.runelite.client.config.ChatColorConfig;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ChatInput;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.ui.JagexColors;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
-import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -67,8 +61,7 @@ public class CollectionLogCommand {
     @Inject
     private BossRecordsService bossRecordsService;
 
-    @Inject
-    private ChatColorConfig chatColorConfig;
+    private static final String SEPARATOR = " | ";
 
     // How long an outgoing "!log" may be held back while the sender's kill counts upload.
     private static final long SUBMIT_TIMEOUT_SECONDS = 3;
@@ -204,9 +197,8 @@ public class CollectionLogCommand {
                 int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
                 int totalItemsCount = items.size();
 
-                final String separator = ChatSeparator.of(separatorColor(chatMessage.getType()));
-                final String counters = formatCounters(page.getChatCounters(), separator);
-                final String itemsPart = itemBuilder.length() > 0 ? separator + itemBuilder : "";
+                final String counters = formatCounters(page.getChatCounters());
+                final String itemsPart = itemBuilder.length() > 0 ? SEPARATOR + itemBuilder : "";
 
                 final String replacementMessage;
                 if (showMissing) {
@@ -225,10 +217,10 @@ public class CollectionLogCommand {
     }
 
     /**
-     * The known kill counts among the given lines, in their order, each after a separator,
+     * The known kill counts among the given lines, in their order, each after a " | ",
      * e.g. " | KC: 312 | HMT KC: 45". Personal bests are left out of the chat reply. Empty when none are known.
      */
-    static String formatCounters(List<CollectionLogCounter> counters, String separator) {
+    static String formatCounters(List<CollectionLogCounter> counters) {
         if (counters == null) {
             return "";
         }
@@ -238,65 +230,10 @@ public class CollectionLogCommand {
             Double value = counter.getValue();
             if (value == null || counter.isPersonalBest()) continue;
 
-            builder.append(separator).append(counter.getDisplayLabel()).append(": ")
+            builder.append(SEPARATOR).append(counter.getDisplayLabel()).append(": ")
                     .append(String.format("%,d", value.longValue()));
         }
         return builder.toString();
-    }
-
-    /**
-     * The separator colour for a reply in this chat: the chat's text colour, dimmed. Resolved the way
-     * RuneLite's ChatMessageManager does: the player's Chat Color config, then the in-game chat colour
-     * setting, then Jagex's default. Null (a plain separator) for private messages, whose split-chat
-     * colour comes from the widget rather than the message.
-     */
-    @Nullable
-    private Color separatorColor(ChatMessageType type) {
-        boolean transparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
-
-        final Color configured;
-        final int setting;
-        final Color fallback = transparent
-                ? JagexColors.CHAT_FC_TEXT_TRANSPARENT_BACKGROUND
-                : JagexColors.CHAT_FC_TEXT_OPAQUE_BACKGROUND;
-        switch (type) {
-            case PUBLICCHAT:
-            case MODCHAT:
-                configured = transparent ? chatColorConfig.transparentPublicChat() : chatColorConfig.opaquePublicChat();
-                setting = transparent ? VarPlayerID.OPTION_CHAT_COLOUR_PUBLIC_TRANSPARENT : VarPlayerID.OPTION_CHAT_COLOUR_PUBLIC_OPAQUE;
-                Color text = textColor(configured, setting, transparent
-                        ? JagexColors.CHAT_PUBLIC_TEXT_TRANSPARENT_BACKGROUND
-                        : JagexColors.CHAT_PUBLIC_TEXT_OPAQUE_BACKGROUND);
-                return ChatSeparator.dim(text, transparent);
-            case FRIENDSCHAT:
-                configured = transparent ? chatColorConfig.transparentFriendsChatMessage() : chatColorConfig.opaqueFriendsChatMessage();
-                setting = transparent ? VarPlayerID.OPTION_CHAT_COLOUR_FRIENDSCHAT_TRANSPARENT : VarPlayerID.OPTION_CHAT_COLOUR_FRIENDSCHAT_OPAQUE;
-                break;
-            case CLAN_CHAT:
-                configured = transparent ? chatColorConfig.transparentClanChatMessage() : chatColorConfig.opaqueClanChatMessage();
-                setting = transparent ? VarPlayerID.OPTION_CHAT_COLOUR_CLANCHAT_TRANSPARENT : VarPlayerID.OPTION_CHAT_COLOUR_CLANCHAT_OPAQUE;
-                break;
-            case CLAN_GIM_CHAT:
-                configured = transparent ? chatColorConfig.transparentClanChatMessage() : chatColorConfig.opaqueClanChatMessage();
-                setting = transparent ? VarPlayerID.OPTION_CHAT_COLOUR_GIMCHAT_TRANSPARENT : VarPlayerID.OPTION_CHAT_COLOUR_GIMCHAT_OPAQUE;
-                break;
-            case CLAN_GUEST_CHAT:
-                configured = transparent ? chatColorConfig.transparentClanChatGuestMessage() : chatColorConfig.opaqueClanChatGuestMessage();
-                setting = transparent ? VarPlayerID.OPTION_CHAT_COLOUR_GUESTCLAN_TRANSPARENT : VarPlayerID.OPTION_CHAT_COLOUR_GUESTCLAN_OPAQUE;
-                break;
-            default:
-                return null;
-        }
-        return ChatSeparator.dim(textColor(configured, setting, fallback), transparent);
-    }
-
-    private Color textColor(@Nullable Color configured, int setting, Color fallback) {
-        if (configured != null) {
-            return configured;
-        }
-        // The in-game setting stores the colour plus one; zero means unset.
-        int value = client.getVarpValue(setting);
-        return value != 0 ? new Color(value - 1) : fallback;
     }
 
     private void loadPageIcons(CollectionLogPage page) {
