@@ -15,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatCommandManager;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ChatInput;
@@ -63,7 +65,10 @@ public class CollectionLogCommand {
     @Inject
     private BossRecordsService bossRecordsService;
 
-    private static final String SEPARATOR = " | ";
+    // A middle dot, in the chat's normal text colour. Colours follow RuneLite's chat command
+    // convention (like !kc and !pb): the page name and numbers use the player's HIGHLIGHT chat
+    // colour, everything else NORMAL, so each player's Chat Color settings apply.
+    static final String SEPARATOR = " \u00B7 ";
 
     // How long an outgoing "!log" may be held back while the sender's kill counts upload.
     private static final long SUBMIT_TIMEOUT_SECONDS = 3;
@@ -213,65 +218,75 @@ public class CollectionLogCommand {
                 loadPageIcons(page);
 
                 List<CollectionLogItem> items = page.getItems();
-                StringBuilder itemBuilder = new StringBuilder();
+                int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
+                int totalItemsCount = items.size();
+                int missingItemsCount = totalItemsCount - obtainedItemsCount;
+
+                ChatMessageBuilder reply = new ChatMessageBuilder()
+                        .append(ChatColorType.HIGHLIGHT)
+                        .append(page.getName())
+                        .append(ChatColorType.NORMAL);
+                if (!showMissing) {
+                    reply.append(" (" + obtainedItemsCount + "/" + totalItemsCount + ")");
+                } else if (missingItemsCount == 0) {
+                    reply.append(" - completed (" + totalItemsCount + "/" + totalItemsCount + ")");
+                } else {
+                    reply.append(" - missing (" + missingItemsCount + "/" + totalItemsCount + ")");
+                }
+
+                appendCounters(reply, page.getChatCounters());
+
+                boolean firstItem = true;
                 for (CollectionLogItem item : items) {
                     // Obtained view keeps items with quantity > 0; missing view keeps quantity < 1.
                     if (showMissing ? item.getQuantity() >= 1 : item.getQuantity() < 1) continue;
 
-                    String itemString = "<img=" + loadedItemIcons.get(item.getId()) + ">";
+                    reply.append(ChatColorType.NORMAL).append(firstItem ? SEPARATOR : "  ");
+                    firstItem = false;
 
+                    reply.img(loadedItemIcons.get(item.getId()));
                     if (config.enableExtendedItemNames()) {
-                        String itemName = itemManager.getItemComposition(item.getId()).getName();
-                        itemString += " " + itemName + " ";
+                        reply.append(" " + itemManager.getItemComposition(item.getId()).getName());
                     }
-
                     if (item.getQuantity() > 1) {
-                        itemString += "x" + item.getQuantity();
+                        reply.append(" x" + item.getQuantity());
                     }
-                    itemString += "  ";
-                    itemBuilder.append(itemString);
                 }
 
-                int obtainedItemsCount = (int) items.stream().filter(item -> item.getQuantity() > 0).count();
-                int totalItemsCount = items.size();
-
-                final String counters = formatCounters(page.getChatCounters());
-                final String itemsPart = itemBuilder.length() > 0 ? SEPARATOR + itemBuilder : "";
-
-                final String replacementMessage;
-                if (showMissing) {
-                    int missingItemsCount = totalItemsCount - obtainedItemsCount;
-                    if (missingItemsCount == 0) {
-                        replacementMessage = page.getName() + " - completed (" + totalItemsCount + "/" + totalItemsCount + ")" + counters;
-                    } else {
-                        replacementMessage = page.getName() + " - missing (" + missingItemsCount + "/" + totalItemsCount + ")" + counters + itemsPart;
-                    }
-                } else {
-                    replacementMessage = page.getName() + " " + "(" + obtainedItemsCount + "/" + totalItemsCount + ")" + counters + itemsPart;
-                }
+                final String replacementMessage = reply.build();
                 updateChatMessage(chatMessage, replacementMessage);
             });
         });
     }
 
     /**
-     * The known kill counts among the given lines, in their order, each after a " | ",
-     * e.g. " | KC: 312 | HMT KC: 45". Personal bests are left out of the chat reply. Empty when none are known.
+     * Appends the known kill counts among the given lines, in their order, each after a separator,
+     * number first, e.g. " \u00B7 312 KC \u00B7 45 HMT KC" with the numbers highlighted. Personal bests are left
+     * out of the chat reply. Appends nothing when none are known.
      */
-    static String formatCounters(List<CollectionLogCounter> counters) {
+    static void appendCounters(ChatMessageBuilder builder, List<CollectionLogCounter> counters) {
         if (counters == null) {
-            return "";
+            return;
         }
 
-        StringBuilder builder = new StringBuilder();
         for (CollectionLogCounter counter : counters) {
             Double value = counter.getValue();
             if (value == null || counter.isPersonalBest()) continue;
 
-            builder.append(SEPARATOR).append(counter.getDisplayLabel()).append(": ")
-                    .append(String.format("%,d", value.longValue()));
+            builder.append(ChatColorType.NORMAL)
+                    .append(SEPARATOR)
+                    .append(ChatColorType.HIGHLIGHT)
+                    .append(String.format("%,d", value.longValue()))
+                    .append(ChatColorType.NORMAL)
+                    .append(" " + counter.getDisplayLabel());
         }
-        return builder.toString();
+    }
+
+    /** {@link #appendCounters} on its own, as RuneLite-format text. */
+    static String formatCounters(List<CollectionLogCounter> counters) {
+        ChatMessageBuilder builder = new ChatMessageBuilder();
+        appendCounters(builder, counters);
+        return builder.build();
     }
 
     private void loadPageIcons(CollectionLogPage page) {
