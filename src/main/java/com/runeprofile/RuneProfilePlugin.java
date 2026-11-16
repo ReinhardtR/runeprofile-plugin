@@ -203,6 +203,7 @@ public class RuneProfilePlugin extends Plugin {
                     }
                     return runeProfileApiClient.updateProfileAsync(data, eventSource)
                             .thenApply((result) -> {
+                                playerDataService.markItemsSynced(data.getItems());
                                 if (result != null && result.isCreated()) {
                                     onProfileCreated(data.getId());
                                 }

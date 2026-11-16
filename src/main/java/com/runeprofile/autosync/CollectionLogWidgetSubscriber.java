@@ -1,6 +1,8 @@
 package com.runeprofile.autosync;
 
+import com.runeprofile.RuneProfileConfig;
 import com.runeprofile.RuneProfilePlugin;
+import com.runeprofile.utils.PlayerState;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -36,6 +38,12 @@ public class CollectionLogWidgetSubscriber {
 
     @Inject
     private RuneProfilePlugin plugin;
+
+    @Inject
+    private RuneProfileConfig config;
+
+    @Inject
+    private AutoSyncScheduler autoSyncScheduler;
 
     private boolean isManualSync = false;
     private boolean isAutoClogRetrieval = false;
@@ -77,6 +85,11 @@ public class CollectionLogWidgetSubscriber {
             if (isManualSync) {
                 scheduledExecutorService.execute(() -> plugin.updateProfileAsync(false, "manual-update-button-clog"));
                 isManualSync = false;
+            } else if (config.autosyncProfile() && PlayerState.isValidPlayerState(client)
+                    && playerDataService.hasUnsyncedItems()) {
+                // The log has loaded and shows something the profile doesn't have yet.
+                log.debug("Collection log has unsynced items, syncing");
+                autoSyncScheduler.startRapidSync("collection-log-open");
             }
             isAutoClogRetrieval = false;
         }

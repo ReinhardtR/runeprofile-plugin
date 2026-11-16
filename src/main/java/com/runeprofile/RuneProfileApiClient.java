@@ -232,6 +232,16 @@ public class RuneProfileApiClient {
                 .thenApplyAsync((response -> handleResponse(response, CollectionLogPage.class)));
     }
 
+    public CompletableFuture<Void> updateBossRecordsAsync(String accountHash, BossRecords records) {
+        HttpUrl url = buildApiUrl("profiles", "boss-records");
+
+        JsonObject payload = gson.toJsonTree(records).getAsJsonObject();
+        payload.addProperty("id", accountHash);
+
+        return postHttpRequestAsync(url, gson.toJson(payload))
+                .thenApplyAsync((response) -> handleResponse(response, null));
+    }
+
     public CompletableFuture<Void> setDefaultClogPage(DefaultClogPageData data) {
         HttpUrl url = buildApiUrl("profiles", "set-default-clog-page");
         return postHttpRequestAsync(url, gson.toJson(data))
