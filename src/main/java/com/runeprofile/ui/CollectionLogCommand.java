@@ -65,10 +65,11 @@ public class CollectionLogCommand {
     @Inject
     private BossRecordsService bossRecordsService;
 
-    // A middle dot, in the chat's normal text colour. Colours follow RuneLite's chat command
-    // convention (like !kc and !pb): the page name and numbers use the player's HIGHLIGHT chat
-    // colour, everything else NORMAL, so each player's Chat Color settings apply.
-    static final String SEPARATOR = " \u00B7 ";
+    // Follows RuneLite's own chat commands (like !kc and !lvl): no separator characters, labels in
+    // the player's NORMAL chat colour and values in HIGHLIGHT, so the colour change shows where each
+    // part starts, e.g. "Theatre of Blood (9/16)  KC: 312  HMT KC: 45  <items>". Parts are two
+    // spaces apart, like the item icons.
+    static final String GAP = "  ";
 
     // How long an outgoing "!log" may be held back while the sender's kill counts upload.
     private static final long SUBMIT_TIMEOUT_SECONDS = 3;
@@ -236,20 +237,21 @@ public class CollectionLogCommand {
 
                 appendCounters(reply, page.getChatCounters());
 
-                boolean firstItem = true;
                 for (CollectionLogItem item : items) {
                     // Obtained view keeps items with quantity > 0; missing view keeps quantity < 1.
                     if (showMissing ? item.getQuantity() >= 1 : item.getQuantity() < 1) continue;
 
-                    reply.append(ChatColorType.NORMAL).append(firstItem ? SEPARATOR : "  ");
-                    firstItem = false;
+                    reply.append(ChatColorType.NORMAL).append(GAP);
 
                     reply.img(loadedItemIcons.get(item.getId()));
-                    if (config.enableExtendedItemNames()) {
+                    boolean named = config.enableExtendedItemNames();
+                    if (named) {
                         reply.append(" " + itemManager.getItemComposition(item.getId()).getName());
                     }
                     if (item.getQuantity() > 1) {
-                        reply.append(" x" + item.getQuantity());
+                        // Straight after the icon (its image already has a transparent margin);
+                        // after a name it needs a space.
+                        reply.append((named ? " x" : "x") + item.getQuantity());
                     }
                 }
 
@@ -260,9 +262,9 @@ public class CollectionLogCommand {
     }
 
     /**
-     * Appends the known kill counts among the given lines, in their order, each after a separator,
-     * number first, e.g. " \u00B7 312 KC \u00B7 45 HMT KC" with the numbers highlighted. Personal bests are left
-     * out of the chat reply. Appends nothing when none are known.
+     * Appends the known kill counts among the given lines, in their order, each as "label: value"
+     * after a gap, e.g. "  KC: 312  HMT KC: 45" with the numbers highlighted. Personal bests are
+     * left out of the chat reply. Appends nothing when none are known.
      */
     static void appendCounters(ChatMessageBuilder builder, List<CollectionLogCounter> counters) {
         if (counters == null) {
@@ -274,11 +276,9 @@ public class CollectionLogCommand {
             if (value == null || counter.isPersonalBest()) continue;
 
             builder.append(ChatColorType.NORMAL)
-                    .append(SEPARATOR)
+                    .append(GAP + counter.getDisplayLabel() + ": ")
                     .append(ChatColorType.HIGHLIGHT)
-                    .append(String.format("%,d", value.longValue()))
-                    .append(ChatColorType.NORMAL)
-                    .append(" " + counter.getDisplayLabel());
+                    .append(String.format("%,d", value.longValue()));
         }
     }
 

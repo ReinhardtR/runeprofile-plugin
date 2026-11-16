@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class CollectionLogCommandTest {
+
     @Test
     public void formatsKnownKillCountsInPageOrderAndSkipsUnknownAndPersonalBests() {
         Locale previous = Locale.getDefault();
@@ -23,12 +24,12 @@ public class CollectionLogCommandTest {
                     new CollectionLogCounter("Personal Best Corrupted", "CG PB", "pb", 372.6),
                     new CollectionLogCounter("Personal Best", "PB", "pb", 1234.0)
             ));
-            assertEquals("<colNORMAL> \u00B7 <colHIGHLIGHT>45<colNORMAL> CG KC", formatted);
+            assertEquals("<colNORMAL>  CG KC: <colHIGHLIGHT>45", formatted);
 
-            assertEquals("<colNORMAL> \u00B7 <colHIGHLIGHT>12,345<colNORMAL> KC", CollectionLogCommand.formatCounters(Arrays.asList(
+            assertEquals("<colNORMAL>  KC: <colHIGHLIGHT>12,345", CollectionLogCommand.formatCounters(Arrays.asList(
                     new CollectionLogCounter("Zulrah kills", "KC", "kc", 12345.0))));
             // Older APIs send no short label
-            assertEquals("<colNORMAL> \u00B7 <colHIGHLIGHT>12,345<colNORMAL> Zulrah kills", CollectionLogCommand.formatCounters(Arrays.asList(
+            assertEquals("<colNORMAL>  Zulrah kills: <colHIGHLIGHT>12,345", CollectionLogCommand.formatCounters(Arrays.asList(
                     new CollectionLogCounter("Zulrah kills", null, "kc", 12345.0))));
         } finally {
             Locale.setDefault(previous);
@@ -68,7 +69,7 @@ public class CollectionLogCommandTest {
                     + "{\"label\":\"Theatre of Blood completions\",\"shortLabel\":\"KC\",\"type\":\"kc\",\"value\":312},"
                     + "{\"label\":\"Theatre of Blood (Hard) completions\",\"shortLabel\":\"HMT KC\",\"type\":\"kc\",\"value\":45}]}",
                     CollectionLogPage.class);
-            assertEquals("<colNORMAL> \u00B7 <colHIGHLIGHT>312<colNORMAL> KC<colNORMAL> \u00B7 <colHIGHLIGHT>45<colNORMAL> HMT KC", CollectionLogCommand.formatCounters(page.getChatCounters()));
+            assertEquals("<colNORMAL>  KC: <colHIGHLIGHT>312<colNORMAL>  HMT KC: <colHIGHLIGHT>45", CollectionLogCommand.formatCounters(page.getChatCounters()));
         } finally {
             Locale.setDefault(previous);
         }
