@@ -49,11 +49,6 @@ tasks.register('runClient', JavaExec) {
     mainClass = 'com.runeprofile.RuneProfilePluginTest'
     enableAssertions = true
 
-    // RuneLite's macOS fullscreen support extends a JDK-internal class; its launcher exports it too.
-    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-        jvmArgs '--add-exports=java.desktop/com.apple.eawt=ALL-UNNAMED'
-    }
-
     if (project.hasProperty('localApi')) {
         systemProperty 'runeprofile.localApi', 'true'
     }

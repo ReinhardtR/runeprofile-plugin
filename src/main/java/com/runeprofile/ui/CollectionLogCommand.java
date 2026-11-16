@@ -65,22 +65,14 @@ public class CollectionLogCommand {
     @Inject
     private BossRecordsService bossRecordsService;
 
-    // Follows RuneLite's own chat commands (like !kc and !lvl): no separator characters, labels in
-    // the player's NORMAL chat colour and values in HIGHLIGHT, so the colour change shows where each
-    // part starts, e.g. "Theatre of Blood (9/16)  KC: 312  HMT KC: 45  <items>". Parts are two
-    // spaces apart, like the item icons.
     static final String GAP = "  ";
 
-    // How long an outgoing "!log" may be held back while the sender's kill counts upload.
     private static final long SUBMIT_TIMEOUT_SECONDS = 3;
 
-    // After a failed upload, "!log" messages go out without uploading for this long.
     private static final long RETRY_AFTER_FAILURE_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
-    // What the last "!log" uploaded, so repeated commands don't re-send unchanged values.
     private volatile BossRecords lastSubmittedRecords;
 
-    // The last "!log" upload, while it may still be running.
     private volatile CompletableFuture<Void> submitInFlight;
 
     private volatile long lastFailedSubmitMillis;
@@ -114,21 +106,13 @@ public class CollectionLogCommand {
         }
     }
 
-    /**
-     * Runs when the local player sends a "!log" message, before it goes out. Uploads their current
-     * kill counts and personal bests so everyone who looks the page up sees fresh values, then lets
-     * the message through. Returning false sends the message right away.
-     *
-     * Repeated commands don't pile up requests: an upload still underway is waited on rather than
-     * repeated, unchanged values aren't re-sent, and a failed upload isn't retried for a minute.
-     */
+    // Uploads the sender's kill counts before their "!log" goes out, so lookups see fresh values.
     private boolean submitBossRecords(ChatInput chatInput, String message) {
         if (!COLLECTION_LOG_COMMAND_PATTERN.matcher(message).matches()) {
             return false;
         }
 
-        // Seasonal and other non-standard worlds keep their own Chat Commands values, which must not
-        // land on the main account's profile.
+        // other world types keep separate Chat Commands values
         if (!PlayerState.isValidPlayerState(client)) {
             return false;
         }
@@ -167,9 +151,7 @@ public class CollectionLogCommand {
         return true;
     }
 
-    /** Lets the held message go out once the upload finishes, or after the timeout. */
     private static void holdUntil(ChatInput chatInput, CompletableFuture<Void> upload) {
-        // A copy, so the timeout doesn't fail the upload for another message waiting on it.
         upload.copy()
                 .orTimeout(SUBMIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .whenComplete((result, ex) -> chatInput.resume());
@@ -249,8 +231,6 @@ public class CollectionLogCommand {
                         reply.append(" " + itemManager.getItemComposition(item.getId()).getName());
                     }
                     if (item.getQuantity() > 1) {
-                        // Straight after the icon (its image already has a transparent margin);
-                        // after a name it needs a space.
                         reply.append((named ? " x" : "x") + item.getQuantity());
                     }
                 }
@@ -261,11 +241,6 @@ public class CollectionLogCommand {
         });
     }
 
-    /**
-     * Appends the known kill counts among the given lines, in their order, each as "label: value"
-     * after a gap, e.g. "  KC: 312  HMT KC: 45" with the numbers highlighted. Personal bests are
-     * left out of the chat reply. Appends nothing when none are known.
-     */
     static void appendCounters(ChatMessageBuilder builder, List<CollectionLogCounter> counters) {
         if (counters == null) {
             return;
@@ -282,7 +257,6 @@ public class CollectionLogCommand {
         }
     }
 
-    /** {@link #appendCounters} on its own, as RuneLite-format text. */
     static String formatCounters(List<CollectionLogCounter> counters) {
         ChatMessageBuilder builder = new ChatMessageBuilder();
         appendCounters(builder, counters);

@@ -87,7 +87,6 @@ public class CollectionLogWidgetSubscriber {
                 isManualSync = false;
             } else if (config.autosyncProfile() && PlayerState.isValidPlayerState(client)
                     && playerDataService.hasUnsyncedItems()) {
-                // The log has loaded and shows something the profile doesn't have yet.
                 log.debug("Collection log has unsynced items, syncing");
                 autoSyncScheduler.startRapidSync("collection-log-open");
             }

@@ -7,15 +7,7 @@ import net.runelite.client.config.ConfigManager;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * Reads the kill counts and personal bests that RuneLite's Chat Commands plugin records for the
- * current RuneScape profile. Chat Commands stores them in the RS-profile config groups
- * "killcount" and "personalbest", keyed by the lowercase boss name from the game's kill message
- * (personal bests in seconds). The server maps those keys to collection log pages.
- * <p>
- * Nothing is read from the game, so this is empty while Chat Commands is disabled or hasn't
- * seen a kill yet.
- */
+/** Reads the kill counts and personal bests RuneLite's Chat Commands plugin stores per profile. */
 @Slf4j
 @Singleton
 public class BossRecordsService {
@@ -54,7 +46,6 @@ public class BossRecordsService {
         try {
             return configManager.getConfiguration(group, profile, key, type);
         } catch (Exception e) {
-            // a value another plugin wrote in an unexpected format; skip it
             log.debug("Skipping unreadable {} entry {}", group, key, e);
             return null;
         }

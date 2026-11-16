@@ -51,11 +51,10 @@ public class PlayerDataService {
 
     // Clog items are not available through the client API, so we store them manually on clog open or item collection.
     // See: CollectionLogWidgetSubscriber and CollectionNotificationSubscriber
-    // Concurrent: stored on the client thread, cleared after a sync on an HTTP thread.
+    // written on the client thread, cleared from HTTP threads
     private final Map<Integer, Integer> clogItems = new ConcurrentHashMap<>();
 
-    // The items this session's profile updates have sent, so a collection log open can tell whether
-    // it found anything new. Empty until the first sync, so the first open of a session always syncs.
+    // items sent by this session's syncs
     private final Map<Integer, Integer> syncedItems = new ConcurrentHashMap<>();
 
     public void startUp() {
@@ -79,7 +78,6 @@ public class PlayerDataService {
 
     @Subscribe
     public void onProfileDeleted(ProfileDeleted event) {
-        // The server no longer has any of them.
         syncedItems.clear();
     }
 
@@ -88,7 +86,6 @@ public class PlayerDataService {
         clogItems.put(itemId, quantity);
     }
 
-    /** Whether any stored item is new, or has a different quantity, since the last sync. */
     public boolean hasUnsyncedItems() {
         for (Map.Entry<Integer, Integer> item : clogItems.entrySet()) {
             if (!item.getValue().equals(syncedItems.get(item.getKey()))) {
@@ -98,7 +95,6 @@ public class PlayerDataService {
         return false;
     }
 
-    /** Records the items a successful profile update sent. */
     public void markItemsSynced(Map<Integer, Integer> items) {
         syncedItems.putAll(items);
     }
@@ -143,7 +139,6 @@ public class PlayerDataService {
 
             // Unlike the rest, clog items are accumulated as the player sees them
             // rather than read from the client here.
-            // A copy, so what's marked as synced afterwards is exactly what was sent.
             playerData.setItems(new HashMap<>(clogItems));
 
             log.debug("Player Data: {}", playerData);

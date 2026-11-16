@@ -40,7 +40,6 @@ public class PlayerData {
     // item id -> quantity
     private Map<Integer, Integer> items = new HashMap<>();
 
-    // From RuneLite's Chat Commands plugin, see BossRecordsService.
     // Chat Commands boss key -> kill count
     private Map<String, Integer> killCounts = new HashMap<>();
 

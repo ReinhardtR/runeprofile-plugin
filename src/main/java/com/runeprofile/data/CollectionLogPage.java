@@ -10,12 +10,10 @@ public class CollectionLogPage {
     private final String name;
     private final List<CollectionLogItem> items;
 
-    // Absent from API versions that predate kill counts on pages.
     @Nullable
     private final List<CollectionLogCounter> counters;
 
-    // The kill counts for the !log reply, in its order (normal mode first, entry modes left out).
-    // Absent from older API versions; fall back to counters then.
+    // the !log reply's kill counts, in reply order
     @Nullable
     private final List<CollectionLogCounter> logCounters;
 
