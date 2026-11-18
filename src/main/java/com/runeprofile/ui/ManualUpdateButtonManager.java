@@ -105,7 +105,7 @@ public class ManualUpdateButtonManager {
 
     private void resetButton() {
         Widget searchButton = client.getWidget(InterfaceID.Collection.SEARCH_TOGGLE);
-        if (searchButton == null) {
+        if (searchButton == null || searchButton.isHidden()) {
             return;
         }
 
